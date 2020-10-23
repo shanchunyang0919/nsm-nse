@@ -128,29 +128,35 @@ e2e-kind-kiknos-test: &e2e-kind-kiknos-test
     - store_artifacts:
         path: /tmp/cluster_state
 
-publish-steps: &publish-steps
-  steps:
-    - checkout
-    - setup_remote_docker
-    - attach_workspace:
-        at: /go/src/_save
-    - run:
-        name: Restore the built images
-        command: |
-          docker load --input /go/src/_save/images.tar
-    - run:
-        name: Tag and publish the images
-        command: |
-          TAGSUFFIX=$(date +%Y%m%d)
-          PUB_ORG=${DOCKER_ORG:-$DOCKER_USER}
-          docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
-          for image in "vl3_ucnf-nse" "ucnf-kiknos-vppagent"; do
-              docker tag ${ORG}/${image}:${CIRCLE_SHA1} ${PUB_ORG}/${image}:${CIRCLE_BRANCH}
-              docker push ${PUB_ORG}/${image}:${CIRCLE_BRANCH}
-              docker tag ${ORG}/${image}:${CIRCLE_SHA1} ${PUB_ORG}/${image}:${CIRCLE_BRANCH}-${TAGSUFFIX}
-              docker push ${PUB_ORG}/${image}:${CIRCLE_BRANCH}-${TAGSUFFIX}
-          done
-
+commands:
+  publish-steps:
+    parameters:
+      tag:
+        type: string
+        default: ${CIRCLE_BRANCH}
+    steps:
+      - checkout
+      - setup_remote_docker
+      - attach_workspace:
+          at: /go/src/_save
+      - run:
+          name: Restore the built images
+          command: |
+            docker load --input /go/src/_save/images.tar
+      - run:
+          name: Tag and publish the images
+          command: |
+            TAGSUFFIX=$(date +%Y%m%d)
+            PUB_ORG=${DOCKER_ORG:-$DOCKER_USER}
+            docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+            export CONTAINER_TAG=<< parameters.tag >>
+            echo "Tag for images: ${CONTAINER_TAG}"
+            for image in "vl3_ucnf-nse" "ucnf-kiknos-vppagent"; do
+                docker tag ${ORG}/${image}:${CIRCLE_SHA1} ${PUB_ORG}/${image}:${CONTAINER_TAG}
+                docker push ${PUB_ORG}/${image}:${CONTAINER_TAG}
+                docker tag ${ORG}/${image}:${CIRCLE_SHA1} ${PUB_ORG}/${image}:${CONTAINER_TAG}-${TAGSUFFIX}
+                docker push ${PUB_ORG}/${image}:${CONTAINER_TAG}-${TAGSUFFIX}
+            done
 
 jobs:
   build-NSEs:
@@ -190,11 +196,18 @@ jobs:
 
   publish-NSEs:
     <<: *defaults
-    <<: *publish-steps
+    steps:
+      - publish-steps
 
+  publish-tagged-images:
+    <<: *defaults
+    steps:
+      - publish-steps:
+          tag: ${CIRCLE_TAG}
 
 orbs:
   helm: circleci/helm@0.2.1
+
 workflows:
   version: 2
   test-and-push:
@@ -215,4 +228,41 @@ workflows:
               only:
                 - master
                 - /release.*/
+  test-and-push-tagged:
+    jobs:
+      - build-NSEs:
+          filters:
+            branches:
+              ignore: /.*/  # will run only for git tagged commits
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+-?.*/
+      - e2e-kind-integration:
+          requires:
+            - build-NSEs
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+-?.*/
+
+      - e2e-kiknos-integration:
+          requires:
+            - build-NSEs
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+-?.*/
+      - publish-tagged-images:
+          context: nse-publish
+          requires:
+            - build-NSEs
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+-?.*/
+
+
+
 
