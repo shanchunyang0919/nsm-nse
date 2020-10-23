@@ -244,7 +244,6 @@ workflows:
               ignore: /.*/
             tags:
               only: /^v[0-9]+\.[0-9]+\.[0-9]+-?.*/
-
       - e2e-kiknos-integration:
           requires:
             - build-NSEs
