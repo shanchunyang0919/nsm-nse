@@ -247,7 +247,7 @@ workflows:
                 - /release.*/
       - ucnfe-integration:
           requires:
-            - ucnfe-integration
+            - ucnfe-integeration
 
   test-and-push-tagged:
     jobs:
