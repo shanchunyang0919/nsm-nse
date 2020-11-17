@@ -218,7 +218,7 @@ jobs:
       - publish-steps:
           tag: ${CIRCLE_TAG}
 
-  ucnfe-integeration:
+  ucnfe-integration:
     <<: *defaults
     <<: *ucnfe-unit-test
 
