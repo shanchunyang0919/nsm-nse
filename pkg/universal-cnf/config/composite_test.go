@@ -234,7 +234,10 @@ func TestMain(m *testing.M) {
 	os.Exit(runTests)
 }
 
-// Test request functions
+/*
+this test ensures that the Request function can retrieve the return values fromProcessEndpoint function
+and ProcessDPConfig function
+*/
 func TestRequest(t *testing.T) {
 	g := NewWithT(t)
 	ctx := context.TODO()
@@ -258,6 +261,9 @@ func TestRequest(t *testing.T) {
 
 }
 
+/*
+this test ensures that the Close function can retrieve the return values of ProcessDPConfig function
+*/
 func TestClose(t *testing.T) {
 	g := NewWithT(t)
 	ctx := context.TODO()
