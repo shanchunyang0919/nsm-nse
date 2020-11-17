@@ -162,7 +162,7 @@ ucnfe-unit-test: &ucnfe-unit-test
   steps:
     - setup_remote_docker
     - checkout:
-        path: /go/src/github.com/cisco-app-networking/nsm-nse
+        path: ~/go/src/github.com/cisco-app-networking/nsm-nse
     - attach_workspace:
         at: /go/src/_save
     - run:
@@ -244,9 +244,8 @@ workflows:
               only:
                 - master
                 - /release.*/
-      - ucnf-integration:
-          requires:
-            - build-NSEs
+      - ucnf-integration
+
 
 
   test-and-push-tagged:
