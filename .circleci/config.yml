@@ -244,7 +244,9 @@ workflows:
               only:
                 - master
                 - /release.*/
-      - ucnf-integration
+      - ucnf-integration:
+          requires:
+            - build-NSEs
 
 
   test-and-push-tagged:
