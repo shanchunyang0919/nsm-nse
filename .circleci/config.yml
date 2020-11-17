@@ -167,9 +167,9 @@ ucnfe-unit-test: &ucnfe-unit-test
         at: /go/src/_save
     - run:
         name: Runl all go unit tests
-        # will execute all go unit tests recursively
+        working_directory: ~/go/src/github.com/cisco-app-networking/nsm-nse/pkg/universal-cnf/config
         command: |
-          go test ./…
+          go test -v
 
 jobs:
   build-NSEs:
