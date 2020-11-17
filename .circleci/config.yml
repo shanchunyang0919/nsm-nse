@@ -17,6 +17,16 @@ defaults-machine: &defaults-machine
     GOPATH: ~/go
     ORG: ciscoappnetworking
 
+
+defaults-go-tester: &defaults-go-tester
+  working_directory: /go/src/github.com/cisco-app-networking/nsm-nse
+  docker:
+    - image: cimg/go:1.13
+  environment:
+    GOPATH: /go
+    ORG: ciscoappnetworking
+
+
 commands:
   publish-steps:
     parameters:
@@ -218,9 +228,7 @@ jobs:
       - publish-steps:
           tag: ${CIRCLE_TAG}
   ucnf-integration:
-    docker:
-      - image: cimg/go:1.15.5
-    <<: *defaults
+    <<: *defaults-go-tester
     <<: *ucnfe-unit-test
 
 orbs:
