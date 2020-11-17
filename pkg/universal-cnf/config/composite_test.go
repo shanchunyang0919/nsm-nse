@@ -210,8 +210,7 @@ func createConnection() (conn *connection.Connection) {
 }
 
 /*
-assigning an empty interface to dpConfig to prevent crashing
-the object uce.dpConfig.Interfaces will be called in the removeClientInterface function, so it can't be nil
+assigning an empty interface to dpConfig to prevent crashing, it cannot be a null pointer
 */
 func createDpConfig() (dpConfig *vpp.ConfigData) {
 	dpConfig = &vpp.ConfigData{
