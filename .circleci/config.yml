@@ -171,10 +171,10 @@ e2e-kind-kiknos-test: &e2e-kind-kiknos-test
 ucnfe-unit-test: &ucnfe-unit-test
   steps:
     - checkout:
-        path: /go/src/github.com/cisco-app-networking/nsm-nse
+        path: /home/circleci/go/src/github.com/cisco-app-networking/nsm-nse
     - run:
         name: Run all go unit tests
-        working_directory: /go/src/github.com/cisco-app-networking/nsm-nse/pkg/universal-cnf/config
+        working_directory: /home/circleci/go/src/github.com/cisco-app-networking/nsm-nse/pkg/universal-cnf/config
         command: |
           go test -v
 
