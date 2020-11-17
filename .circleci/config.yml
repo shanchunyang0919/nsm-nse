@@ -217,7 +217,7 @@ jobs:
     steps:
       - publish-steps:
           tag: ${CIRCLE_TAG}
-
+  # ucnf endpoint
   ucnfe-integration:
     <<: *defaults
     <<: *ucnfe-unit-test
@@ -245,9 +245,9 @@ workflows:
               only:
                 - master
                 - /release.*/
-      - ucnfe-integration:
+      - ucnf-integration:
           requires:
-            - ucnfe-integeration
+            - ucnfe-integration
 
   test-and-push-tagged:
     jobs:
