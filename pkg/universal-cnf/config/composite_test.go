@@ -60,13 +60,13 @@ var (
 	vl3DNSZones    = []string{""}
 )
 
-// The mock implementer of the interface UniversalCNFBackend
+// the mock implementer of the interface UniversalCNFBackend
 type MockUcnfBackendProcessDPConfig struct {
 }
 
 /*
-These are the implementations of the ucnf endpoint backend interface. These mock functions are used for testing
-the ProcessDPconfig function call.
+these are the implementations of the ucnf endpoint backend interface, and these mock functions are used for testing
+the ProcessDPconfig function call
 */
 func (m *MockUcnfBackendProcessDPConfig) NewDPConfig() *vpp.ConfigData {
 	return &vpp.ConfigData{}
@@ -94,8 +94,8 @@ type MockUcnfBackendReturnNil struct {
 }
 
 /*
-These are the mock functions that will return nil only, which means that the Request() and Close() functions will
-run till the end without getting errors from ProcessEndpoint and ProcessDPConfig function calls.
+these are the mock functions that will return nil only, which means that the Request() and Close() functions will
+run till the end without getting errors from ProcessEndpoint and ProcessDPConfig function calls
 */
 func (m *MockUcnfBackendReturnNil) NewDPConfig() *vpp.ConfigData {
 	return &vpp.ConfigData{}
@@ -122,8 +122,8 @@ type MockUcnfBackendProcessEndpoint struct {
 }
 
 /*
-These are the implementations of the ucnf endpoint backend interface. These mock functions are used for testing
-the ProcessEndpoint function call.
+these are the implementations of the ucnf endpoint backend interface
+mock functions are used for testingthe ProcessEndpoint function call
 */
 func (m *MockUcnfBackendProcessEndpoint) NewDPConfig() *vpp.ConfigData {
 	return &vpp.ConfigData{}
@@ -210,8 +210,8 @@ func createConnection() (conn *connection.Connection) {
 }
 
 /*
-Assigning an empty interface to dpConfig to prevent crashing.
-The object uce.dpConfig.Interfaces will be called in the removeClientInterface function, so it can't be nil.
+assigning an empty interface to dpConfig to prevent crashing
+the object uce.dpConfig.Interfaces will be called in the removeClientInterface function, so it can't be nil
 */
 func createDpConfig() (dpConfig *vpp.ConfigData) {
 	dpConfig = &vpp.ConfigData{
@@ -235,7 +235,7 @@ func TestMain(m *testing.M) {
 }
 
 /*
-this test ensures that the Request function can retrieve the return values fromProcessEndpoint function
+this test ensures that the Request function can get return values fromProcessEndpoint function
 and ProcessDPConfig function
 */
 func TestRequest(t *testing.T) {
@@ -262,7 +262,7 @@ func TestRequest(t *testing.T) {
 }
 
 /*
-this test ensures that the Close function can retrieve the return values of ProcessDPConfig function
+this test ensures that the Close function can get return values of ProcessDPConfig function
 */
 func TestClose(t *testing.T) {
 	g := NewWithT(t)
