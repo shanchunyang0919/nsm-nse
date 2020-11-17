@@ -170,11 +170,8 @@ e2e-kind-kiknos-test: &e2e-kind-kiknos-test
 
 ucnfe-unit-test: &ucnfe-unit-test
   steps:
-    - setup_remote_docker
     - checkout:
         path: ~/go/src/github.com/cisco-app-networking/nsm-nse
-    - attach_workspace:
-        at: /go/src/_save
     - run:
         name: Run all go unit tests
         working_directory: ~/go/src/github.com/cisco-app-networking/nsm-nse/pkg/universal-cnf/config
