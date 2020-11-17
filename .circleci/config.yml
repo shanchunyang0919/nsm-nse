@@ -158,6 +158,18 @@ e2e-kind-kiknos-test: &e2e-kind-kiknos-test
     - store_artifacts:
         path: /tmp/cluster_state
 
+ucnfe-unit-test: &ucnfe-unit-test
+  steps:
+    - setup_remote_docker
+    - checkout:
+        path: /go/src/github.com/cisco-app-networking/nsm-nse
+    - attach_workspace:
+        at: /go/src/_save
+    - run:
+        name: Runl all go unit tests
+        # will execute all go unit tests recursively
+        command: |
+          go test ./…
 
 jobs:
   build-NSEs:
@@ -206,6 +218,9 @@ jobs:
       - publish-steps:
           tag: ${CIRCLE_TAG}
 
+  ucnfe-integeration:
+    <<: *defaults
+    <<: *ucnfe-unit-test
 
 orbs:
   helm: circleci/helm@0.2.1
@@ -230,6 +245,10 @@ workflows:
               only:
                 - master
                 - /release.*/
+      - ucnfe-integration:
+          requires:
+            - ucnfe-integration
+
   test-and-push-tagged:
     jobs:
       - build-NSEs:
