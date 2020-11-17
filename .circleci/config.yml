@@ -176,10 +176,11 @@ ucnfe-unit-test: &ucnfe-unit-test
         name: Run all go unit tests
         working_directory: ~/go/src/github.com/cisco-app-networking/nsm-nse/pkg/universal-cnf/config
         command: |
-          sudo mkdir /go
-          sudo chown circleci:circleci /go
+          export GOPATH=~/go
           go test -v
 
+#sudo mkdir /go
+  #          sudo chown circleci:circleci /go
 jobs:
   build-NSEs:
     <<: *defaults
