@@ -160,4 +160,8 @@ kind: ServiceAccount
 metadata:
   name: {{ .Values.nsm.serviceName }}-service-account
   namespace: {{ .Release.Namespace }}
+  annotations:
+      {{- if .Values.serviceAccount.irsaIamRole }}
+      eks.amazonaws.com/role-arn: {{ .Values.serviceAccount.irsaIamRole }}
+      {{- end }}
 
