@@ -90,4 +90,8 @@ make&push the image to the dockerhub, and then we can run the **run_vl3.sh** scr
 ORG=shanchunyang0919 TAG=master make docker-vl3
 docker image push shanchunyang0919/vl3_ucnf-nse:master
 ```
+run the script with the env variables tiding to our dockerhub
+```
+NSE_HUB=shanchunyang0919 NSE_TAG=master KUBECONFDIR=~/tmp/kind/kubeconfigs/awsvm/kubeconfigs/nsm build/ci/runner/run_vl3.sh
+```
 If we want to test anything, just repeat the previous steps
