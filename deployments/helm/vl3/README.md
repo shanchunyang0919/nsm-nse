@@ -51,9 +51,11 @@ cluster3=/Users/<YOUR_USERNAME>/tmp/kind/kubeconfigs/awsvm/kubeconfigs/nsm/kind-
 ```
 Souce
 ```
- .~/tmp/kind/kubeconfigs/awsvm/lab_clustermaps.sh
+. ~/tmp/kind/kubeconfigs/awsvm/awsvm_clustermaps.sh
 ```
 Now we can use our laptop to access the clusters in VM
 ```
-kubectl get pods --kubeconfig kind-1.kubeconfig
+kubectl get pods --kubeconfig $cluster1 -A
+kubectl get pods --kubeconfig $cluster2 -A
+kubectl get pods --kubeconfig $cluster3 -A
 ```
