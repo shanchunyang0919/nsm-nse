@@ -61,6 +61,33 @@ kubectl get pods --kubeconfig $cluster3 -A
 ```
 
 **Run vl3 test on you laptop**
+go to the nsm-nse local repo
+```
+cd ~/go/src/github.com/cisco-app-networking/nsm-nse
+```
+run the script
 ```
 NSE_HUB=ciscoappnetworking NSE_TAG=master KUBECONFDIR=~/tmp/kind/kubeconfigs/awsvm/kubeconfigs/nsm build/ci/runner/run_vl3.sh
 ```
+clean up
+```
+kubectl delete deployment helloworld-ucnf --kubeconfig $cluster2
+kubectl delete deployment vl3-nse-ucnf --kubeconfig $cluster2
+kubectl delete namespace nsm-system --kubeconfig $cluster2
+kubectl delete namespace spire --kubeconfig $cluster2
+kubectl delete deployment helloworld-ucnf --kubeconfig $cluster3
+kubectl delete deployment vl3-nse-ucnf --kubeconfig $cluster3
+kubectl delete namespace nsm-system --kubeconfig $cluster3
+kubectl delete namespace spire --kubeconfig $cluster3
+```
+after clean up, if we want to test, we will need to build the image again
+first login
+```
+docker login --username=shanchunyang0919
+```
+make&push the image to the dockerhub, and then we can run the **run_vl3.sh** script again.
+```
+ORG=shanchunyang0919 TAG=master make docker-vl3
+docker image push shanchunyang0919/vl3_ucnf-nse:master
+```
+If we want to test anything, just repeat the previous steps
