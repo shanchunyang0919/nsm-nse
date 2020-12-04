@@ -95,3 +95,9 @@ run the script with the env variables tiding to our dockerhub
 NSE_HUB=shanchunyang0919 NSE_TAG=master KUBECONFDIR=~/tmp/kind/kubeconfigs/awsvm/kubeconfigs/nsm build/ci/runner/run_vl3.sh
 ```
 If we want to test anything, just repeat the previous steps
+
+**Check if the service account is updated**
+```
+kubectl describe sa/ucnf-service-account --kubeconfig $cluster2
+kubectl describe sa/ucnf-service-account --kubeconfig $cluster3
+```
