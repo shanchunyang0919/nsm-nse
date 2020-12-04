@@ -59,3 +59,8 @@ kubectl get pods --kubeconfig $cluster1 -A
 kubectl get pods --kubeconfig $cluster2 -A
 kubectl get pods --kubeconfig $cluster3 -A
 ```
+
+**Run vl3 test on you laptop**
+```
+NSE_HUB=ciscoappnetworking NSE_TAG=master KUBECONFDIR=~/tmp/kind/kubeconfigs/awsvm/kubeconfigs/nsm build/ci/runner/run_vl3.sh
+```
