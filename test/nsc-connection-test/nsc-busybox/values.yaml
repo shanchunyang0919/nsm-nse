@@ -1,0 +1,6 @@
+replicaCount: 1
+
+restartWaitTime: 5
+
+nsm:
+  serviceName: vl3-service

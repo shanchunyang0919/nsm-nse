@@ -1,0 +1,8 @@
+apiVersion: v2
+name: nsc-busybox
+description: A Helm chart for Kubernetes
+type: application
+# Chart version
+version: 0.1.0
+# Version of application being deployed
+appVersion: 1.16.0
