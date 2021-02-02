@@ -26,6 +26,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.5.1
+	k8s.io/api v0.20.1
+	k8s.io/apimachinery v0.20.1
+	k8s.io/client-go v0.20.1
 )
 
 replace (

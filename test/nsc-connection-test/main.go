@@ -1,14 +1,12 @@
 package main
 
 import (
-
 	"fmt"
-	"helm.sh/helm/v3/pkg/chart"
-	"os"
-
-	"helm.sh/helm/v3/pkg/chart/loader"
 	helmAPI "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/helm_api"
-
+	k8sAPI "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/kubernetes_api"
+	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chart/loader"
+	"os"
 )
 
 const (
@@ -16,8 +14,6 @@ const (
 	chartPath = "./nsc-busybox"
 	nsmServiceName = "vl3-service"
 	replicaCount = "1"
-
-
 )
 
 var (
@@ -25,11 +21,17 @@ var (
 	restartWaitTime string
 	//chartName string
 	//iterations string
-
 )
 
 
 func main(){
+	//testing k8s api
+	k8sAPI.InitClient()
+
+	fmt.Print("int ")
+
+
+
 
 
 	restartWaitTime := os.Args[1]
@@ -37,23 +39,13 @@ func main(){
 
 	vals := createValues(restartWaitTime)
 
-	fmt.Print(vals)
+	fmt.Print("erererer here ")
 
 	chart, err := loader.Load(chartPath)
 	if err != nil{
 		os.Exit(1)
 	}
-/*
-	deployment := appsv1.
-	file, err := ioutil.ReadFile("busybox.yaml")
-	if err != nil{
-		log.Fatal(err)
-	}
-	err = yaml.Unmarshal(file, deployment)
-	if err != nil{
-		log.Fatal(err)
-	}
-*/
+
 
 	releaseInfo := createReleaseInfo(*vals, chart, releaseName)
 	releaseInfo.InstallChart()
@@ -61,7 +53,7 @@ func main(){
 
 }
 
-/*
+
 
 
 type ReleaseInfo struct {
@@ -72,7 +64,8 @@ type ReleaseInfo struct {
 	Values map[string]interface{}
 }
 
- */
+
+
 
 func createReleaseInfo(vals map[string]interface{}, chart *chart.Chart, relName string) *helmAPI.ReleaseInfo{
 	return &helmAPI.ReleaseInfo{
