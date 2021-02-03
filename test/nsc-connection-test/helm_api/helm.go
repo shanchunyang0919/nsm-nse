@@ -20,6 +20,11 @@ const (
 	HELM_DRIVER = "HELM_DRIVER"
 )
 
+type Util interface {
+	InstallChart() error
+}
+
+
 type HelmClientEndpoint struct{
 	Release *Release
 	Chart *chart.Chart
@@ -27,24 +32,27 @@ type HelmClientEndpoint struct{
 	Actions *action.Configuration
 }
 
-
 // stores helm release info
 type Release struct{
 	ReleaseName string
 	ChartPath string
-	//ChartName string
 	Namespace string
 }
 
-func initRelease() (r *Release){
-	return &Release{
+func (hc *HelmClientEndpoint) InstallChart() error{
+	client := action.NewInstall(hc.Actions)
+	client.ReleaseName = hc.Release.ReleaseName
+	client.Namespace = hc.Release.ChartPath
 
+	rel, err := client.Run(hc.Chart, *hc.Values)
+	if err != nil{
+		return err
 
 	}
+	log.Printf("installed Chart from path %s in namespace %s...\n", rel.Name, rel.Namespace)
+	return nil
 
 }
-
-
 
 func InitHelmClientEndpoint(values *map[string]interface{}, r *Release) *HelmClientEndpoint{
 	return &HelmClientEndpoint{
@@ -81,7 +89,6 @@ func createChart(chartPath string) *chart.Chart{
 	}
 	return chart
 }
-
 
 
 func initActionConfig(namespace string) (act *action.Configuration){

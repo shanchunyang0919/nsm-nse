@@ -1,57 +1,48 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	helmAPI "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/helm_api"
-	k8sAPI "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/kubernetes_api"
 
-	"os"
+	k8s "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/kubernetes_api"
+	helm "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/helm_api"
 )
 
 const (
-	//RELEASE_NAME = "testing"
+	RELEASE_NAME = "testing"
 	NAMESPACE = "default"
-	CHARTPATH = "./nsc-busybox"
+	CHARTPATH = "./helm_nsc"
 	SERVICE_NAME = "vl3-service"
 	REPLICA_COUNT = "1"
 )
 
 var (
-	releaseName string
+
 	restartWaitTime string
 
 )
 
 
 func main(){
-	//testing k8s api
-	c := k8sAPI.InitClientEndpoint()
+	// pass in parameters
+	flag.StringVar(&restartWaitTime, "restart", "3", "restart wait time")
+	flag.Parse()
+
+	fmt.Println(restartWaitTime)
+
+	// Init helm endpoint
+	vals := helm.CreateValues(SERVICE_NAME, REPLICA_COUNT, restartWaitTime)
+	release := helm.CreateReleaseInfo(RELEASE_NAME, CHARTPATH, NAMESPACE)
+	h := helm.InitHelmClientEndpoint(vals, release)
+
+
+	h.InstallChart()
+
+	//Inspect
+	c := k8s.InitClientEndpoint()
 	mmm := c.GetPodRestartInfos()
 
 	fmt.Print(mmm)
-
-
-	//take 3 parameters
-
-	restartWaitTime := os.Args[1]
-	releaseName := os.Args[2]
-
-
-
-	// Init helm endpoint
-
-
-
-	vals := helmAPI.CreateValues(SERVICE_NAME, REPLICA_COUNT, restartWaitTime)
-	release := helmAPI.CreateReleaseInfo(releaseName, CHARTPATH, NAMESPACE)
-
-
-	fmt.Print("erererer here ")
-
-
-	h := helmAPI.InitHelmClientEndpoint(vals, release)
-	fmt.Print(h)
-	//releaseInfo.InstallChart()
 
 
 }

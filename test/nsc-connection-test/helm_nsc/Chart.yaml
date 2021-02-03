@@ -1,5 +1,5 @@
 apiVersion: v2
-name: nsc-busybox
+name: helm_nsc
 description: A Helm chart for Kubernetes
 type: application
 # Chart version
