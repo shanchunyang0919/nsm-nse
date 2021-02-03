@@ -26,7 +26,7 @@ var (
 
 func main(){
 	//testing k8s api
-	k8sAPI.InitClient()
+	k8sAPI.API()
 
 	fmt.Print("int ")
 

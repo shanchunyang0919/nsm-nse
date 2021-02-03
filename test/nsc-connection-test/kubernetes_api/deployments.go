@@ -18,6 +18,14 @@ func GetDeploymentList(clientSet *kubernetes.Clientset, namespace string) *v1.De
 	return dep
 }
 
+func DeleteDeployment(clientSet *kubernetes.Clientset, namespace string, depName string) {
+	err := clientSet.AppsV1().Deployments(namespace).Delete(context.TODO(), depName, metav1.DeleteOptions{})
+	if err != nil{
+		log.Fatalf("cannot delete deployment %s", depName)
+	}
+
+}
+
 
 // Print all deployment names
 func PrintDeploymentList (depList *v1.DeploymentList) {

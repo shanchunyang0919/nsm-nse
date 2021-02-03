@@ -52,7 +52,7 @@ func API(){
 	// Generate kubeconfig path
 	kconfig := getKubeConfig()
 
-
+	clientSet := createClientset(kconfig)
 	// Build config from flags
 
 
@@ -63,7 +63,7 @@ func API(){
 	PrintDeploymentList(depList)
 
 	podList := GetPodList(clientSet, namespace)
-	PrintPodList(podList)
+	PrintPodList(clientSet, namespace, podList)
 
 
 
