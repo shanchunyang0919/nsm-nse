@@ -26,9 +26,10 @@ var (
 
 func main(){
 	//testing k8s api
-	k8sAPI.API()
+	c := k8sAPI.InitClientEndpoint()
+	mmm := c.GetPodRestartInfos()
 
-	fmt.Print("int ")
+	fmt.Print(mmm)
 
 
 
