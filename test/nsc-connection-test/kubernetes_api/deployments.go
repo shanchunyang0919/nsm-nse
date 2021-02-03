@@ -21,7 +21,8 @@ func GetDeploymentList(clientSet *kubernetes.Clientset, namespace string) *v1.De
 
 // Print all deployment names
 func PrintDeploymentList (depList *v1.DeploymentList) {
+	fmt.Print("print deployment names...\n")
 	for _, dep := range depList.Items{
-		fmt.Print(dep.Name)
+		fmt.Printf(dep.Name + "\n")
 	}
 }

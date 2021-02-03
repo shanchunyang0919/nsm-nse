@@ -25,23 +25,9 @@ const (
 	masterURL = ""
 
 
-
-
 )
 
-
-
-func getKubeConfig() (kconfig string){
-	kconfig = filepath.Join(os.Getenv(HOME_ENV), ".kube", "config")
-	return
-}
-
-func InitClient(){
-	// Generate kubeconfig path
-	kconfig := getKubeConfig()
-
-
-	// Build config from flags
+func createClientset(kconfig string) *kubernetes.Clientset{
 	config, err := clientcmd.BuildConfigFromFlags(masterURL, kconfig)
 	if err != nil{
 		log.Fatal("cannot build config from flags")
@@ -53,13 +39,31 @@ func InitClient(){
 	if err != nil{
 		log.Fatal("cannot create clientset")
 	}
+	return clientSet
+}
+
+
+func getKubeConfig() (kconfig string){
+	kconfig = filepath.Join(os.Getenv(HOME_ENV), ".kube", "config")
+	return
+}
+
+func API(){
+	// Generate kubeconfig path
+	kconfig := getKubeConfig()
+
+
+	// Build config from flags
+
 
 
 	//List deployments
 	depList := GetDeploymentList(clientSet, namespace)
 
-	log.Print("print deployments...")
 	PrintDeploymentList(depList)
+
+	podList := GetPodList(clientSet, namespace)
+	PrintPodList(podList)
 
 
 
