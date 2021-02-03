@@ -14,7 +14,7 @@ const (
 	containerStatusListIdx = 0
 )
 
-func GetPodList(clientSet *kubernetes.Clientset, namespace string) *corev1.PodList {
+func getPodList(clientSet *kubernetes.Clientset, namespace string) *corev1.PodList {
 	podList, err := clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		log.Fatal("error getting pod list\n")
@@ -23,17 +23,17 @@ func GetPodList(clientSet *kubernetes.Clientset, namespace string) *corev1.PodLi
 	return podList
 }
 
-func PrintPodList(clientSet *kubernetes.Clientset, namespace string, podList *corev1.PodList) {
+func printPodList(clientSet *kubernetes.Clientset, namespace string, podList *corev1.PodList) {
 	var restartCount int32
 
 	fmt.Print("print pod names and restart counts\n")
 	for _, pod := range podList.Items {
-		restartCount = GetPodRestartCount(clientSet, pod.Name, namespace)
+		restartCount = getPodRestartCount(clientSet, pod.Name, namespace)
 		fmt.Printf("%s, restart: %v\n", pod.Name, restartCount)
 	}
 }
 
-func GetPodRestartCount(clientSet *kubernetes.Clientset, podName string, namespace string) int32 {
+func getPodRestartCount(clientSet *kubernetes.Clientset, podName string, namespace string) int32 {
 	pd, err := clientSet.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
 	if err != nil {
 		log.Fatalf("cannot get pod info %s\n", podName)

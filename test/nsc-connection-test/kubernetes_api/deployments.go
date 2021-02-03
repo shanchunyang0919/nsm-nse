@@ -32,6 +32,5 @@ func DeleteDeployment(clientSet *kubernetes.Clientset, namespace string, depName
 	if err != nil{
 		log.Fatalf("cannot delete deployment %s", depName)
 	}
-
 }
 */

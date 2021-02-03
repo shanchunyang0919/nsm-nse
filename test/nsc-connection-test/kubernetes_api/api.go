@@ -1,7 +1,6 @@
 package kubernetes_api
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -32,35 +31,33 @@ type Utils interface{
 }
 
 type KubernetesClientEndpoint struct{
-	kubeconfig string
-	namespace string
-	clientset *kubernetes.Clientset
+	Kubeconfig string
+	Namespace string
+	ClientSet *kubernetes.Clientset
 
 }
 
 
 func (kc *KubernetesClientEndpoint) GetPods() (podList *corev1.PodList){
-	podList = GetPodList(kc.clientset, kc.namespace)
+	podList = getPodList(kc.ClientSet, kc.Namespace)
 	return
 }
 
 func (kc *KubernetesClientEndpoint) DisplayPods() {
-	podList := GetPodList(kc.clientset, kc.namespace)
-	PrintPodList(kc.clientset, kc.namespace, podList)
+	podList := getPodList(kc.ClientSet, kc.Namespace)
+	printPodList(kc.ClientSet, kc.Namespace, podList)
 }
 
 // returns a map using pod name and key and restart count as value
 func (kc *KubernetesClientEndpoint) GetPodRestartInfos() map[string]int32{
 	var restartCount int32
 	m := make(map[string]int32, 0)
-	podList := GetPodList(kc.clientset, kc.namespace)
+	podList := getPodList(kc.ClientSet, kc.Namespace)
 	for _, pod := range podList.Items {
-		restartCount = GetPodRestartCount(kc.clientset, pod.Name, kc.namespace)
+		restartCount = getPodRestartCount(kc.ClientSet, pod.Name, kc.Namespace)
 		m[pod.Name] = restartCount
 	}
 
-	//test
-	fmt.Print(m)
 	return m
 }
 
@@ -83,14 +80,14 @@ func getKubeConfig() string {
 	return filepath.Join(os.Getenv(HOME_ENV), ".kube", "config")
 }
 
-//export function
+//public function
 func InitClientEndpoint() *KubernetesClientEndpoint{
 	kconfig := getKubeConfig()
 	clientSet := createClientset(kconfig)
 	return &KubernetesClientEndpoint{
-		kubeconfig: kconfig,
-		namespace: NAMESPACE,
-		clientset: clientSet,
+		Kubeconfig: kconfig,
+		Namespace: NAMESPACE,
+		ClientSet: clientSet,
 	}
 }
 	// Build config from flags
