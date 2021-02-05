@@ -1,0 +1,25 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  apiServerAddress: 127.0.0.1
+
+kubeadmConfigPatchesJSON6902:
+  - group: kubeadm.k8s.io
+    version: v1beta2
+    kind: ClusterConfiguration
+    patch: |
+      - op: add
+        path: /apiServer/certSANs/-
+        value: "127.0.0.1"
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 6443
+        hostPort: 38791
+        listenAddress: 127.0.0.1
+      - containerPort:  31922
+        hostPort: 38901
+        listenAddress: 127.0.0.1
+  - role: worker
+  - role: worker
+
