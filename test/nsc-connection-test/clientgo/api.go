@@ -38,17 +38,25 @@ func (kc *KubernetesClientEndpoint) ReCreateDeployment(dep *v1.Deployment){
 	createDeployment(kc.ClientSet, kc.Namespace, dep)
 }
 
+func InitClientEndpoint() *KubernetesClientEndpoint{
+	kconfig := getKubeConfig()
+	clientSet := createClientset(kconfig)
+	return &KubernetesClientEndpoint{
+		Kubeconfig: kconfig,
+		Namespace: NAMESPACE,
+		ClientSet: clientSet,
+	}
+}
 
 func createClientset(kconfig string) *kubernetes.Clientset {
 	config, err := clientcmd.BuildConfigFromFlags(MASTER_URL, kconfig)
 	if err != nil {
-		log.Fatal("cannot build config from flags")
+		log.Fatal(err)
 	}
 
-	log.Print("create clientset...")
 	clientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		log.Fatal("cannot create clientset")
+		log.Fatal(err)
 	}
 
 	return clientSet
@@ -59,13 +67,3 @@ func getKubeConfig() string {
 }
 
 
-//public function
-func InitClientEndpoint() *KubernetesClientEndpoint{
-	kconfig := getKubeConfig()
-	clientSet := createClientset(kconfig)
-	return &KubernetesClientEndpoint{
-		Kubeconfig: kconfig,
-		Namespace: NAMESPACE,
-		ClientSet: clientSet,
-	}
-}

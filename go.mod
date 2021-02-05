@@ -5,7 +5,7 @@ go 1.14
 require (
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/davecgh/go-spew v1.1.1
-	github.com/golang/protobuf v1.4.2
+	github.com/golang/protobuf v1.4.3
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-opentracing v0.0.0-20180507213350-8e809c8a8645
 	github.com/networkservicemesh/networkservicemesh/controlplane/api v0.3.0
@@ -16,7 +16,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.1.0
 	github.com/sirupsen/logrus v1.7.0
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.6.1
 	go.ligato.io/cn-infra/v2 v2.5.0-alpha.0.20200313154441-b0d4c1b11c73
 	go.ligato.io/vpp-agent/v3 v3.3.0-alpha.0.20210111123645-a04d009c61c5
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
@@ -25,6 +25,9 @@ require (
 	gopkg.in/yaml.v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 	gotest.tools v2.2.0+incompatible
+	k8s.io/api v0.20.2
+	k8s.io/apimachinery v0.20.2
+	k8s.io/client-go v0.18.8
 )
 
 replace (
@@ -37,4 +40,7 @@ replace (
 	github.com/networkservicemesh/networkservicemesh/pkg => github.com/cisco-app-networking/networkservicemesh/pkg v0.2.3-vl3
 	github.com/networkservicemesh/networkservicemesh/sdk => github.com/cisco-app-networking/networkservicemesh/sdk v0.2.3-vl3
 	github.com/networkservicemesh/networkservicemesh/utils => github.com/cisco-app-networking/networkservicemesh/utils v0.2.3-vl3
+	k8s.io/api => k8s.io/api v0.19.2
+	k8s.io/apimachinery => k8s.io/apimachinery v0.19.2
+	k8s.io/client-go => k8s.io/client-go v0.19.2
 )
