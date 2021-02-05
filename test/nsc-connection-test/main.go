@@ -14,7 +14,7 @@ import (
 )
 
 const(
-	serviceName = "vl3-nse"
+	serviceName = "vl3-service"
 	imageName = "busybox:1.28"
 	replicaCount = 1
 
