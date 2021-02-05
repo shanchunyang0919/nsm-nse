@@ -1,6 +1,7 @@
 package kubernetes_api
 
 import (
+	v1 "k8s.io/api/apps/v1"
 	"log"
 	"os"
 	"path/filepath"
@@ -9,9 +10,11 @@ import (
 	//typev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	//v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/tools/clientcmd"
+
 	//metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
+
 	//hey "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/kubernetes_api"
 )
 
@@ -27,14 +30,14 @@ type Utils interface{
 	GetPods() *corev1.PodList
 	DisplayPods()
 	GetPodRestartInfos() map[string]int32
-
+	CreateDeployment(*v1.Deployment)
+	DeleteDeployment(*v1.Deployment)
 }
 
 type KubernetesClientEndpoint struct{
 	Kubeconfig string
 	Namespace string
 	ClientSet *kubernetes.Clientset
-
 }
 
 
@@ -48,7 +51,23 @@ func (kc *KubernetesClientEndpoint) DisplayPods() {
 	printPodList(kc.ClientSet, kc.Namespace, podList)
 }
 
-// returns a map using pod name and key and restart count as value
+func (kc *KubernetesClientEndpoint) GetDeployment() *v1.Deployment{
+	return &getDeploymentList(kc.ClientSet, kc.Namespace).Items[0]
+}
+
+func (kc *KubernetesClientEndpoint) GetDeploymentByName(depName string) *v1.Deployment{
+	return getDeploymentByName(kc.ClientSet, kc.Namespace, depName)
+}
+
+func (kc *KubernetesClientEndpoint) CreateDeployment(dep *v1.Deployment){
+	createDeployment(kc.ClientSet, kc.Namespace, dep)
+}
+
+func (kc *KubernetesClientEndpoint) DeleteDeployment(dep *v1.Deployment){
+	deleteDeployment(kc.ClientSet, kc.Namespace, dep.Name)
+}
+
+/*
 func (kc *KubernetesClientEndpoint) GetPodRestartInfos() map[string]int32{
 	var restartCount int32
 	m := make(map[string]int32, 0)
@@ -57,9 +76,20 @@ func (kc *KubernetesClientEndpoint) GetPodRestartInfos() map[string]int32{
 		restartCount = getPodRestartCount(kc.ClientSet, pod.Name, kc.Namespace)
 		m[pod.Name] = restartCount
 	}
-
 	return m
 }
+
+ */
+
+/*
+func (kc *KubernetesClientEndpoint) CreateDeployment(){
+	kc.ClientSet.AppsV1().Deployments(kc.Namespace).Create(context.TODO(), ,)
+
+
+
+}
+ */
+
 
 func createClientset(kconfig string) *kubernetes.Clientset {
 	config, err := clientcmd.BuildConfigFromFlags(MASTER_URL, kconfig)
@@ -80,6 +110,7 @@ func getKubeConfig() string {
 	return filepath.Join(os.Getenv(HOME_ENV), ".kube", "config")
 }
 
+
 //public function
 func InitClientEndpoint() *KubernetesClientEndpoint{
 	kconfig := getKubeConfig()
@@ -90,16 +121,3 @@ func InitClientEndpoint() *KubernetesClientEndpoint{
 		ClientSet: clientSet,
 	}
 }
-	// Build config from flags
-
-	//List deployments
-
-	/*
-	depList := GetDeploymentList(clientSet, namespace)
-
-	PrintDeploymentList(depList)
-
-	podList := GetPodList(clientSet, namespace)
-	PrintPodList(clientSet, namespace, podList)
-
-}*/

@@ -11,7 +11,7 @@ import (
 
 const (
 	// used for getting container restart count
-	containerStatusListIdx = 0
+	CONTAINERSTATUS_LIST_IDX = 0
 )
 
 func getPodList(clientSet *kubernetes.Clientset, namespace string) *corev1.PodList {
@@ -39,7 +39,7 @@ func getPodRestartCount(clientSet *kubernetes.Clientset, podName string, namespa
 		log.Fatalf("cannot get pod info %s\n", podName)
 	}
 
-	return pd.Status.ContainerStatuses[containerStatusListIdx].RestartCount
+	return pd.Status.ContainerStatuses[CONTAINERSTATUS_LIST_IDX].RestartCount
 }
 
 /*

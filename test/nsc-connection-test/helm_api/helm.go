@@ -1,27 +1,23 @@
 package helm_api
 
-import(
-	"helm.sh/helm/v3/pkg/chart"
-	"helm.sh/helm/v3/pkg/chart/loader"
-	"os"
-	//"time"
-	//"fmt"
+import (
 	"log"
+	"os"
 
 	"helm.sh/helm/v3/pkg/action"
-	//"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
-	//"helm.sh/helm/v3/pkg/kube"
-	//"helm.sh/helm/v3/pkg/release"
-
 )
 
 const (
-	HELM_DRIVER = "HELM_DRIVER"
+	HELMDRIVER = "HELM_DRIVER"
 )
 
 type Util interface {
 	InstallChart() error
+	UninstallChart()
+	ReinstallChart()
 }
 
 
@@ -53,6 +49,21 @@ func (hc *HelmClientEndpoint) InstallChart() error{
 	return nil
 
 }
+
+func (hc *HelmClientEndpoint) UninstallChart(){
+	client := action.NewUninstall(hc.Actions)
+	_, err := client.Run(hc.Release.ReleaseName)
+	if err != nil{
+		log.Fatalf("error uninstall release %s", hc.Release.ReleaseName)
+	}
+}
+
+
+func (hc *HelmClientEndpoint) ReinstallChart(){
+	hc.UninstallChart()
+	hc.InstallChart()
+}
+
 
 func InitHelmClientEndpoint(values *map[string]interface{}, r *Release) *HelmClientEndpoint{
 	return &HelmClientEndpoint{
@@ -94,25 +105,9 @@ func createChart(chartPath string) *chart.Chart{
 func initActionConfig(namespace string) (act *action.Configuration){
 	settings := cli.New()
 	act = new(action.Configuration)
-	if err := act.Init(settings.RESTClientGetter(), namespace, os.Getenv(HELM_DRIVER), log.Printf); err != nil{
+	if err := act.Init(settings.RESTClientGetter(), namespace, os.Getenv(HELMDRIVER), log.Printf); err != nil{
 		log.Fatal("#{err}")
 	}
 	return act
 }
 
-/*
-func (r *ReleaseInfo) InstallChart() error{
-	actionConfig:= r.initActionConfig()
-	client := action.NewInstall(actionConfig)
-	client.ReleaseName = r.ReleaseName
-	client.Namespace = r.Namespace
-	rel, err := client.Run(r.Chart, r.Values)
-
-	if err != nil{
-		return err
-
-	}
-	log.Printf("Installed Chart from path: %s in namespace: %s\n", rel.Name, rel.Namespace)
-	return nil
-}
-*/

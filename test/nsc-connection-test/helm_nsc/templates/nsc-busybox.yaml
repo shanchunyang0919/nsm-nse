@@ -4,8 +4,8 @@ metadata:
   name: busybox-{{ .Values.nsm.serviceName }}
   labels:
     version: v1
-  #annotations:
-   # ns.networkservicemesh.io: {{ .Values.nsm.serviceName }}
+  annotations:
+    ns.networkservicemesh.io: {{ .Values.nsm.serviceName }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
