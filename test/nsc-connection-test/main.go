@@ -1,15 +1,16 @@
 package main
 
 import (
-	//"fmt"
 	"log"
 	"flag"
+	"time"
 	"strconv"
-	//"k8s.io/utils"
-	apiv1 "k8s.io/api/core/v1"
+
 	appsv1 "k8s.io/api/apps/v1"
+	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	//"github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
+
+	kubeapi "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
 )
 
 const(
@@ -20,28 +21,43 @@ const(
 )
 
 func main(){
-	// Get input parameters
-	applyDeployment := flag.Bool("apply", false, "")
-	podRestartTime := flag.Int("restart", 0, "")
-	podRestartFreq := flag.Int("frequency", 0, "")
-	restartIterPeriod := flag.Int("iter", 0, "")
+	// parameters
+	applyDeployment := flag.Bool("apply", false, "create a new deployment")
+	podRestartTime := flag.Int("re", 0, "restart rate")
+	podRestartFreq := flag.Int("freq", 0, "restart iteration count")
+	restartIterPeriod := flag.Int("iter", 0, "restart iteration time period")
 	flag.Parse()
 
-	//check
-	log.Print(*applyDeployment, *podRestartTime, *podRestartFreq, *restartIterPeriod)
+	dep := BusyboxDeployment(*podRestartTime)
+
+	deploymentClient := kubeapi.InitClientEndpoint()
 
 	if *applyDeployment{
-		log.Print("apply deployment")
+		log.Print("create deployment...")
+		deploymentClient.CreateDeployment(dep)
 	}else{
-		log.Print("reapply")
+		log.Print("recreate deployment...")
+		deploymentClient.ReCreateDeployment(dep)
 	}
 
-	dep := BusyboxDeployment(*podRestartTime)
-	log.Print(dep)
-
-
-
+	if *podRestartFreq != 0 && *restartIterPeriod != 0 {
+		log.Fatal("the iteration period and pod restart countshould be mutually exclusive")
+	} else if *restartIterPeriod > 0 {
+		log.Printf("iterating for %v seconds...", *restartIterPeriod)
+		time.Sleep(time.Second * time.Duration(*restartIterPeriod))
+	} else if *podRestartFreq > 0 {
+		restartCountMode(*podRestartFreq, *podRestartTime, dep, deploymentClient)
+	}
 }
+
+func restartCountMode(podRestartFreq int, podRestartTime int, dep *appsv1.Deployment, endpoint *kubeapi.KubernetesClientEndpoint){
+	for i := 1; i <= podRestartFreq; i++{
+		log.Printf("restart count %v...", i)
+		endpoint.ReCreateDeployment(dep)
+		time.Sleep(time.Second * time.Duration(podRestartTime))
+	}
+}
+
 
 // This is busybox deployment replacing nsc helloworld for testing purposing
 func BusyboxDeployment(podRestartTime int) *appsv1.Deployment{
