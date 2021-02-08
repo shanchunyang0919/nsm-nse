@@ -5,10 +5,12 @@ import (
 	"context"
 
 	"k8s.io/client-go/kubernetes"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 )
+
+
 
 // Delete the deployment instead of monitoring
 func deleteDeployment(clientSet *kubernetes.Clientset, namespace string, depName string) {
@@ -18,7 +20,7 @@ func deleteDeployment(clientSet *kubernetes.Clientset, namespace string, depName
 	}
 }
 
-func createDeployment(clientSet *kubernetes.Clientset, namespace string, dep *v1.Deployment) {
+func createDeployment(clientSet *kubernetes.Clientset, namespace string, dep *appsv1.Deployment) {
 	_, err := clientSet.AppsV1().Deployments(namespace).Create(context.TODO(), dep, metav1.CreateOptions{})
 	if err != nil{
 		log.Fatal(err)
