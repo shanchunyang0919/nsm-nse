@@ -15,7 +15,15 @@ const(
 	vl3NSELabel = "networkservicemesh.io/app=vl3-nse-vl3-service"
 	//NSCLabel = "app=busybox-vl3-service"
 
+
 )
+
+
+
+
+
+
+
 
 func Help(){
 	kClient := kubeapi.InitClientEndpoint(vl3Namespace)
@@ -66,6 +74,7 @@ func AssertNSELogs(kClient *kubeapi.KubernetesClientEndpoint, assertMessage stri
 	}
 
 }
+
 
 
 

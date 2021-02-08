@@ -57,12 +57,17 @@ func (kc *KubernetesClientEndpoint) GetPodIP(podName string) string{
 	return getPodIP(kc.ClientSet, kc.Namespace, podName)
 }
 
+func (kc *KubernetesClientEndpoint) GetContainerID(podName string, imageName string) string{
+	return getContainerID(kc.ClientSet, kc.Namespace, podName, imageName)
+}
+
 func (kc *KubernetesClientEndpoint) CreateService(service *corev1.Service){
 	_, err := kc.ClientSet.CoreV1().Services(kc.Namespace).Create(context.TODO(), service, metav1.CreateOptions{})
 	if err != nil{
 		log.Fatal(err)
 	}
 }
+
 
 func InitClientEndpoint(namespace string) *KubernetesClientEndpoint{
 	kconfig := getKubeConfig()

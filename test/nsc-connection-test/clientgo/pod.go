@@ -50,6 +50,22 @@ func getPodLogsTails(clientset *kubernetes.Clientset, namespace string, podName 
 
 }
 
+// get container ID from imageName
+func getContainerID(clientset *kubernetes.Clientset, namespace string, podName string, imageName string) string{
+
+	pod, err := clientset.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
+	if err != nil{
+		log.Fatal(err)
+
+	}
+	for _, container := range pod.Status.ContainerStatuses{
+		if container.Image == imageName{
+			return container.ContainerID
+		}
+	}
+	return ""
+}
+
 // type conversion helper method
 func intToint64ptr(i int) *int64{
 	val := int64(i)
