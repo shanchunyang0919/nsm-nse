@@ -1,4 +1,4 @@
-package main
+package connection
 
 import (
 	"log"
@@ -15,14 +15,14 @@ import (
 const (
 	serviceName  = "vl3-service"
 	imageName    = "busybox:1.28"
-	replicaCount = 1
+	//replicaCount = 1
 	servicePort = 5000
 	servicePortName = "http"
 )
 
 // Create a mock deployment
-func InitSetup( podRestartTime int, podRestartFreq int, restartIterPeriod int){
-	dep := busyboxDeployment(podRestartTime)
+func InitSetup( podRestartTime int, podRestartFreq int, restartIterPeriod int, replicaCount int){
+	dep := busyboxDeployment(podRestartTime, replicaCount)
 	deploymentClient := kubeapi.InitClientEndpoint(corev1.NamespaceDefault)
 
 	log.Print("create service...")
@@ -36,8 +36,8 @@ func InitSetup( podRestartTime int, podRestartFreq int, restartIterPeriod int){
 }
 
 // Recreate a mock deployment
-func Setup(podRestartTime int, podRestartFreq int, restartIterPeriod int) {
-	dep := busyboxDeployment(podRestartTime)
+func Setup(podRestartTime int, podRestartFreq int, restartIterPeriod int, replicaCount int) {
+	dep := busyboxDeployment(podRestartTime, replicaCount)
 	deploymentClient := kubeapi.InitClientEndpoint(corev1.NamespaceDefault)
 
 	log.Print("recreate deployment...")
@@ -69,10 +69,10 @@ func restartCountMode(podRestartFreq int, podRestartTime int, dep *appsv1.Deploy
 }
 
 // This is busybox deployment replacing nsc helloworld for testing purposing
-func busyboxDeployment(podRestartTime int) *appsv1.Deployment {
+func busyboxDeployment(podRestartTime int, replicaCount int) *appsv1.Deployment {
 	// type conversions to fit in appsv1.Deployment
 	val := int32(replicaCount)
-	var restartTimePtr *int32 = &val
+	var replicaCountptr *int32 = &val
 	podRestartTimeStr := strconv.Itoa(podRestartTime)
 
 	return &appsv1.Deployment{
@@ -86,7 +86,7 @@ func busyboxDeployment(podRestartTime int) *appsv1.Deployment {
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: restartTimePtr,
+			Replicas: replicaCountptr,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app":     "busybox-" + serviceName,

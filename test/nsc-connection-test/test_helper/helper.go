@@ -31,6 +31,7 @@ type Container struct{
 }
 
 var (
+	// match ping statistics - X packets transmitted, X packets received, X% packet loss
 	linuxPingRegexp = regexp.MustCompile("\n([0-9]+) packets transmitted, ([0-9]+) packets received, ([0-9]+)% packet loss")
 )
 
@@ -84,7 +85,7 @@ func AssertNSELogs(kClient *kubeapi.KubernetesClientEndpoint, assertMessage stri
 
 }
 
-// get into the pod and
+// Access into specific container inside a pod and execute commands
 func ExecIntoPod(cmd []string, containerName string, podName string, namespace string, stdin io.Reader) (string, string, error){
 	kconfig := kubeapi.GetKubeConfig()
 	config := kubeapi.GetClientConfig(kconfig)
@@ -129,6 +130,8 @@ func ExecIntoPod(cmd []string, containerName string, podName string, namespace s
 	return stdout.String(), stderr.String(), nil
 }
 
+
+// Perform linux Ping command with routing compartment identifier
 func (c *Container) Ping(destIP string, packetTransmit int) bool{
 	pingCmd := "ping -c " + strconv.Itoa(packetTransmit) + " " + destIP
 	cmd := []string{"sh", "-c", pingCmd}
@@ -139,7 +142,9 @@ func (c *Container) Ping(destIP string, packetTransmit int) bool{
 		log.Fatal("stderr:", stderr)
 	}
 	if err != nil{
-		log.Fatal(err)
+		// having problems pinging
+		log.Print(err)
+		return false
 	}
 
 	log.Print("ping logs:\n",stdout)
