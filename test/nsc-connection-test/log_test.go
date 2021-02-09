@@ -1,9 +1,10 @@
 package main
 
 import (
-	kubeapi "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
+	//kubeapi "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
 	helper "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/test_helper"
-	v1 "k8s.io/api/core/v1"
+	//v1 "k8s.io/api/core/v1"
+	//"github.com/cisco-app-networking/wcm-common/pkg/utils/kube"
 	"log"
 	"testing"
 )
@@ -11,7 +12,7 @@ import (
 const(
 
 	// initialize mock deployment
-	initPodRestartTime = 30
+	initPodRestartTime = 3000
 	initPodRestartFreq = 0
 	initRestartIterPeriod = 0
 	defaultImageName = "busybox:1.28"
@@ -26,30 +27,32 @@ var (
 func TestMain(m *testing.M) {
 	log.Print("------------ NSC Connection Test ------------")
 
-	kC := kubeapi.InitClientEndpoint("default")
-
-
-
-	req := kC.ClientSet.RESTClient().Post().Resource("pods").Name("wordpress-mysql-213049546-29s7d").
-		Namespace("default").SubResource("exec").
-		Param("container", "mysql")
-	option := &v1.PodExecOptions{
-		Container: defaultImageName,
-		Command:  []string{"/bin/sh", "-c", "ls", "-ll", "."},
-		Stdin:   true,
-		Stdout:  true,
-		Stderr:  true,
-		TTY:     true,
-	}
-
-
-
 
 
 	// Create a NSC busybox deployment
-	InitSetup(initPodRestartTime, initPodRestartFreq, initRestartIterPeriod)
+	//InitSetup(initPodRestartTime, initPodRestartFreq, initRestartIterPeriod)
 
-	//m.Run()
+	//{"/bin/sh", "-c", "ls", "-ll", "."}
+	//cmd := []string{"/bin/sh", "-c", "ping", "127.0.0.1"}
+	/*
+	cmd := []string{"sh", "-c","ping -c 10 google.com"}
+	containerName := "busybox"
+	podName := "busybox-vl3-service-7445cc4d9b-z68xj"
+*/
+	c := helper.Container{
+		ContainerName: "busybox",
+		PodName: "busybox-vl3-service-7445cc4d9b-z68xj",
+		Namespace: "default",
+	}
+
+	log.Print(c.Ping("google.com", 5))
+
+/*
+	output, _, err := helper.ExecIntoPod(cmd, containerName,podName,"default", nil)
+	if err != nil{
+		log.Fatal(err)
+	}
+*/
 
 	log.Print("------------ NSC Connection Test Ends ------------")
 }

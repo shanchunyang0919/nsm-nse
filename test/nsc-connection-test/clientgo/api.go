@@ -70,7 +70,7 @@ func (kc *KubernetesClientEndpoint) CreateService(service *corev1.Service){
 
 
 func InitClientEndpoint(namespace string) *KubernetesClientEndpoint{
-	kconfig := getKubeConfig()
+	kconfig := GetKubeConfig()
 	clientSet := createClientset(kconfig)
 	return &KubernetesClientEndpoint{
 		Kubeconfig: kconfig,
@@ -80,11 +80,7 @@ func InitClientEndpoint(namespace string) *KubernetesClientEndpoint{
 }
 
 func createClientset(kconfig string) *kubernetes.Clientset {
-	config, err := clientcmd.BuildConfigFromFlags(MASTER_URL, kconfig)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	config := GetClientConfig(kconfig)
 	clientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		log.Fatal(err)
@@ -93,8 +89,16 @@ func createClientset(kconfig string) *kubernetes.Clientset {
 	return clientSet
 }
 
-func getKubeConfig() string {
+func GetKubeConfig() string {
 	return filepath.Join(os.Getenv(HOME_ENV), ".kube", "config")
+}
+
+func GetClientConfig(kconfig string) *rest.Config{
+	config, err := clientcmd.BuildConfigFromFlags(MASTER_URL, kconfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return config
 }
 
 
