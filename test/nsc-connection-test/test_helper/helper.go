@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"io"
+	"strings"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -147,11 +148,22 @@ func (c *Container) Ping(destIP string, packetTransmit int) bool{
 		return false
 	}
 
-	log.Print("ping logs:\n",stdout)
+	log.Printf("Ping from pod %s: container \"%s\" to address %s\n%s", c.PodName, c.ContainerName, destIP,stdout)
 
 	matches := linuxPingRegexp.FindString(stdout)
 	if matches == ""{
 		// cannot transmit packet
+		return false
+	}
+	// check for packet loss
+	args := strings.Split(strings.Split(matches, ",")[2], "%")
+	packetLossPercentage, err := strconv.Atoi(strings.TrimPrefix(args[0], " "))
+	if err != nil{
+		log.Fatal(err)
+	}
+
+	if packetLossPercentage != 0{
+		log.Print("packet loss is not 0%")
 		return false
 	}
 	return true

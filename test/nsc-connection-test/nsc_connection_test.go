@@ -1,15 +1,15 @@
 package connection_test
 
 import (
-	kubeapi "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
 	"os"
-	//kubeapi "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
-	helper "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/test_helper"
-	. "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test"
-	//v1 "k8s.io/api/core/v1"
-	//"github.com/cisco-app-networking/wcm-common/pkg/utils/kube"
 	"log"
 	"testing"
+	"time"
+
+	. "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test"
+
+	kubeapi "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
+	helper "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/test_helper"
 )
 
 const(
@@ -27,7 +27,7 @@ const(
 	nscContainerName = "busybox"
 	vl3Namespace = "wcm-system"
 	mockNscLabels = "app=busybox-vl3-service"
-	packetTransmit = 5
+	packetTransmit = 1
 
 )
 
@@ -133,11 +133,18 @@ func TestConnectivity(t *testing.T){
 	clientWCM := kubeapi.InitClientEndpoint(vl3Namespace)
 	vl3List := clientWCM.GetPodList(vl3NSELabel)
 
-	// deploys a long live pod
-	var podRestartTime = 5000
-	Setup(podRestartTime, 0, 0, 1)
-
 	log.Print("------------ Connectivity Tests ------------")
+
+	// wait till all the pods are initialized
+	var waitTime = 10
+
+	// deploys a long live pod
+	/*
+	var podRestartTime = 5000
+	Setup(podRestartTime, 0, 0, 2)
+*/
+	time.Sleep(time.Second * time.Duration(waitTime))
+
 	var c *helper.Container
 	var vl3DestIP string
 	var connectionCount int
@@ -152,7 +159,7 @@ func TestConnectivity(t *testing.T){
 		}
 		for _, vl3pod := range vl3List.Items {
 			vl3DestIP = clientWCM.GetPodIP(vl3pod.Name)
-			// TODO assert here
+
 			if c.Ping(vl3DestIP,packetTransmit){
 				connectionCount++
 			}
