@@ -36,21 +36,9 @@ var (
 	linuxPingRegexp = regexp.MustCompile("\n([0-9]+) packets transmitted, ([0-9]+) packets received, ([0-9]+)% packet loss")
 )
 
-func Help(){
-	kClient := kubeapi.InitClientEndpoint(vl3Namespace)
-
-	//temp
-	//vl3podname := "vl3-nse-vl3-service-78cc5c5d9c-hvs9g"
-
-	//req := kClient.GetPodLogsRequest(vl3podname)
-	//GetLogs(req)
-
-	AssertNSELogs(kClient, "hey" )
-
-}
 
 // Reads pod logs request and print out the logs with I/O package
-func GetLogs(req *rest.Request){
+func GetLogs(req *rest.Request) string{
 	podLogs, err := req.Stream(context.TODO())
 	if err != nil{
 		log.Fatal(err)
@@ -62,29 +50,39 @@ func GetLogs(req *rest.Request){
 		log.Fatal(err)
 	}
 	logs := buf.String()
-	log.Print(logs)
-	//TODO: assert error message here
+
+	return logs
 }
 
-func AssertNSELogs(kClient *kubeapi.KubernetesClientEndpoint, assertMessage string){
+// takes a pod name and returns the logs corresponding to the tail numbers, and also return a boolean to
+// validate if the logs match the regex
+func GetNSELogs(kClient *kubeapi.KubernetesClientEndpoint, assertMessage string, podName string, tails int) string{
 	var req *rest.Request
-	// only get list of NSE pods under wcm-system namespace
-	podList := kClient.GetPodList(vl3NSELabel)
 
-	//test
-	//podList := kClient.GetPodList("test")
-
-	log.Printf("asseting message: %v", assertMessage)
-
-	for _, pod := range podList.Items{
-		log.Println("-----pod name----",pod.Name)
-		//req = kClient.GetPodLogsSinceSeconds(pod.Name, 3600)
-		req = kClient.GetPodLogsTails(pod.Name, 20)
-
-		GetLogs(req)
-	}
-
+	req = kClient.GetPodLogsTails(podName, tails)
+	//req = kClient.GetPodLogsSinceSeconds(podName, 3600)
+	logs := GetLogs(req)
+	return logs
 }
+
+func AssertNotMatch(logs string, assertMessage string) bool{
+	assertMsg := regexp.MustCompile(assertMessage)
+	matches := assertMsg.FindString(logs)
+	if matches == ""{
+		return true
+	}
+	return false
+}
+
+func AssertMatch(logs string, assertMessage string) bool{
+	assertMsg := regexp.MustCompile(assertMessage)
+	matches := assertMsg.FindString(logs)
+	if matches == ""{
+		return false
+	}
+	return true
+}
+
 
 // Access into specific container inside a pod and execute commands
 func ExecIntoPod(cmd []string, containerName string, podName string, namespace string, stdin io.Reader) (string, string, error){
@@ -94,6 +92,7 @@ func ExecIntoPod(cmd []string, containerName string, podName string, namespace s
 	if err != nil{
 		log.Fatal(err)
 	}
+
 
 	req := kClient.CoreV1().RESTClient().Post().Resource("pods").Name(podName).
 		Namespace(namespace).SubResource("exec")
@@ -132,8 +131,9 @@ func ExecIntoPod(cmd []string, containerName string, podName string, namespace s
 }
 
 
-// Perform linux Ping command with routing compartment identifier
-func (c *Container) Ping(destIP string, packetTransmit int) bool{
+// Perform linux Ping command with routing compartment identifier. This method returns stream output and
+// boolean which determines if the output matches regex.
+func (c *Container) Ping(destIP string, packetTransmit int) (string, bool){
 	pingCmd := "ping -c " + strconv.Itoa(packetTransmit) + " " + destIP
 	cmd := []string{"sh", "-c", pingCmd}
 
@@ -145,15 +145,13 @@ func (c *Container) Ping(destIP string, packetTransmit int) bool{
 	if err != nil{
 		// having problems pinging
 		log.Print(err)
-		return false
+		return "", false
 	}
-
-	log.Printf("Ping from pod %s: container \"%s\" to address %s\n%s", c.PodName, c.ContainerName, destIP,stdout)
 
 	matches := linuxPingRegexp.FindString(stdout)
 	if matches == ""{
 		// cannot transmit packet
-		return false
+		return "", false
 	}
 	// check for packet loss
 	args := strings.Split(strings.Split(matches, ",")[2], "%")
@@ -164,9 +162,9 @@ func (c *Container) Ping(destIP string, packetTransmit int) bool{
 
 	if packetLossPercentage != 0{
 		log.Print("packet loss is not 0%")
-		return false
+		return "", false
 	}
-	return true
+	return stdout, true
 }
 
 

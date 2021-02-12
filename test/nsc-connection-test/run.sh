@@ -33,7 +33,7 @@ echo
 echo "INSTALL VL3-NSE"
 echo "---------------------"
 
-REMOTE_IP=${IPAM} KCONF=${KUBEPATH} PULLPOLICY=Always NSEREPLICAS=2 scripts/vl3/vl3_interdomain.sh
+REMOTE_IP=${IPAM} KCONF=${KUBEPATH} PULLPOLICY=Always NSEREPLICAS=1 scripts/vl3/vl3_interdomain.sh
 
 cd ${TESTDIR}
 

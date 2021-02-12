@@ -14,7 +14,9 @@ import (
 
 // Delete the deployment instead of monitoring
 func deleteDeployment(clientSet *kubernetes.Clientset, namespace string, depName string) {
-	err := clientSet.AppsV1().Deployments(namespace).Delete(context.TODO(), depName, metav1.DeleteOptions{})
+	var gracePeriod int64 = 0
+	err := clientSet.AppsV1().Deployments(namespace).Delete(context.TODO(), depName,
+		metav1.DeleteOptions{GracePeriodSeconds: &gracePeriod})
 	if err != nil{
 		log.Fatal(err)
 	}

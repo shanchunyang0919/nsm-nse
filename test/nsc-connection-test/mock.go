@@ -20,6 +20,11 @@ const (
 	servicePortName = "http"
 )
 
+var (
+	busyboxPodLabel = "app=busybox-vl3-service"
+
+)
+
 // Create a mock deployment
 func InitSetup( podRestartTime int, podRestartFreq int, restartIterPeriod int, replicaCount int){
 	dep := busyboxDeployment(podRestartTime, replicaCount)

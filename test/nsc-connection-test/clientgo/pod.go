@@ -13,7 +13,7 @@ import (
 func getPodList(clientSet *kubernetes.Clientset, namespace string, labels string) *corev1.PodList {
 	podList, err := clientSet.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labels})
 	if err != nil {
-		log.Fatal("err")
+		log.Fatal(err)
 	}
 
 	return podList
