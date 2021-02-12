@@ -30,7 +30,7 @@ const(
 	nscNamespace = "default"
 	nscContainerName = "busybox"
 	vl3Namespace = "wcm-system"
-	mockNscLabels = "app=busybox-vl3-service"
+	nscLabel = "app=busybox-vl3-service"
 	packetTransmit = 1
 
 )
@@ -84,8 +84,9 @@ func TestLogs(t *testing.T){
 		t.Skip("skip log test")
 	}
 
-	kClient := kubeapi.InitClientEndpoint(vl3Namespace)
-	vl3List := kClient.GetPodListByLabel(vl3NSELabel)
+	vl3Client := kubeapi.InitClientEndpoint(vl3Namespace)
+	NSCClient := kubeapi.InitClientEndpoint(nscNamespace)
+	vl3List := vl3Client.GetPodListByLabel(vl3NSELabel)
 
 	log.Printf("----- Logs Tests -----")
 	testCases := []MockNSC{
@@ -112,14 +113,20 @@ func TestLogs(t *testing.T){
 	var tails = 20
 
 	// asserting this message
+	// TODO: make sure what error msg it is
 	var errMsg = "level=error"
 
 	for testNum, test  := range testCases{
 		ReSetup(test.podRestartTime, test.podRestartFreq, test.restartIterPeriod, test.replicaCount)
 
+		// Prints out NSC restart counts
+		for _, nscPod := range NSCClient.GetPodListByLabel(nscLabel).Items{
+			GetContainersRestartCount(&nscPod)
+		}
+
 		// iterate through all the NSEs to search for errors logs
 		for _, pod := range vl3List.Items {
-			logsCaptured := GetNSELogs(kClient, pod.Name, tails)
+			logsCaptured := GetNSELogs(vl3Client, pod.Name, tails)
 
 			if LOG_MODE == "on" {
 				log.Printf("Test Case: %v\n", testNum)
@@ -198,7 +205,7 @@ func TestConnectivity(t *testing.T){
 		var vl3DestIP string
 		var connectionCount int
 		ReSetup(test.podRestartTime, test.podRestartFreq, test.restartIterPeriod, test.replicaCount)
-		nscList := kubeapi.InitClientEndpoint(nscNamespace).GetPodListByLabel(mockNscLabels)
+		nscList := kubeapi.InitClientEndpoint(nscNamespace).GetPodListByLabel(nscLabel)
 		// iterate through every NSC containers to ping all NSEs
 		for _, pod := range nscList.Items{
 			connectionCount = 0
