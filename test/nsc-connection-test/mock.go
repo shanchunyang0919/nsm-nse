@@ -46,7 +46,7 @@ func Setup(podRestartTime int, podRestartFreq int, restartIterPeriod int, replic
 	deploymentClient := kubeapi.InitClientEndpoint(corev1.NamespaceDefault)
 
 	log.Print("recreate deployment...")
-	deploymentClient.ReCreateDeployment(dep)
+	deploymentClient.ReCreateNSCDeployment(dep)
 
 	controller(dep, deploymentClient, podRestartTime, podRestartFreq, restartIterPeriod)
 }
@@ -58,7 +58,7 @@ func controller(dep *appsv1.Deployment, deploymentClient *kubeapi.KubernetesClie
 	} else if restartIterPeriod > 0 {
 		log.Printf("iterating for %v seconds...", restartIterPeriod)
 		time.Sleep(time.Second * time.Duration(restartIterPeriod))
-		deploymentClient.ReCreateDeployment(dep)
+		deploymentClient.ReCreateNSCDeployment(dep)
 	} else if podRestartFreq > 0 {
 		restartCountMode(podRestartFreq, podRestartTime, dep, deploymentClient)
 	}
@@ -68,7 +68,7 @@ func controller(dep *appsv1.Deployment, deploymentClient *kubeapi.KubernetesClie
 func restartCountMode(podRestartFreq int, podRestartTime int, dep *appsv1.Deployment, endpoint *kubeapi.KubernetesClientEndpoint) {
 	for i := 1; i <= podRestartFreq; i++ {
 		log.Printf("restart count %v...", i)
-		endpoint.ReCreateDeployment(dep)
+		endpoint.ReCreateNSCDeployment(dep)
 		time.Sleep(time.Second * time.Duration(podRestartTime))
 	}
 }

@@ -45,16 +45,17 @@ func (kc *KubernetesClientEndpoint) CleanUpNSC(dep *appsv1.Deployment){
 	kc.DeletePodByLabel(nscLabel)
 }
 
-
 // clean up
-func (kc *KubernetesClientEndpoint) ReCreateDeployment(dep *appsv1.Deployment) {
+func (kc *KubernetesClientEndpoint) ReCreateNSCDeployment(dep *appsv1.Deployment) {
+	nscLabels := "app=busybox-vl3-service"
+	nscContainerName := "busybox"
 	kc.CleanUpNSC(dep)
 	time.Sleep(time.Second * 2)
 	createDeployment(kc.ClientSet, kc.Namespace, dep)
-
+	// check if all the busybox containers are running
 	for {
 		var hasNotReadyContainer bool
-		podList := kc.GetPodList("app=busybox-vl3-service")
+		podList := kc.GetPodList(nscLabels)
 		// wait till the pod is created
 		if len(podList.Items) == 0{
 			time.Sleep(time.Millisecond * 250)
@@ -62,7 +63,7 @@ func (kc *KubernetesClientEndpoint) ReCreateDeployment(dep *appsv1.Deployment) {
 		}
 		for _, pod := range podList.Items{
 			for _, containerStatus := range pod.Status.ContainerStatuses{
-				if containerStatus.Name != "busybox"{
+				if containerStatus.Name != nscContainerName{
 					continue
 				}
 				if !containerStatus.Ready{

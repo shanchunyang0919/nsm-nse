@@ -195,7 +195,7 @@ func TestConnectivity(t *testing.T){
 
 	// deploys a long live pod
 	var podRestartTime = 5000
-	Setup(podRestartTime, 0, 0, 2)
+	Setup(podRestartTime, 0, 0, 20)
 
 
 	var c *helper.Container
@@ -211,11 +211,7 @@ func TestConnectivity(t *testing.T){
 	// iterate through every NSC containers to ping all NSEs
 	for _, pod := range nscList.Items{
 		fmt.Println(pod.Name)
-		/*
-		if pod.DeletionTimestamp != nil {
-			log.Print("delete")
-			continue
-		}*/
+
 		connectionCount = 0
 		c = &helper.Container{
 			ContainerName: nscContainerName,
