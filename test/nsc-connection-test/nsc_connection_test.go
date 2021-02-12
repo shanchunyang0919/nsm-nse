@@ -78,7 +78,7 @@ func TestLogs(t *testing.T){
 	}
 
 	kClient := kubeapi.InitClientEndpoint(vl3Namespace)
-	vl3List := kClient.GetPodList(vl3NSELabel)
+	vl3List := kClient.GetPodListByLabel(vl3NSELabel)
 
 	log.Printf("----- Logs Tests -----")
 	testCases := []struct{
@@ -189,7 +189,7 @@ func TestLogs(t *testing.T){
 func TestConnectivity(t *testing.T){
 	//setup
 	clientWCM := kubeapi.InitClientEndpoint(vl3Namespace)
-	vl3List := clientWCM.GetPodList(vl3NSELabel)
+	vl3List := clientWCM.GetPodListByLabel(vl3NSELabel)
 
 	log.Print("----- Connectivity Tests -----")
 
@@ -205,7 +205,7 @@ func TestConnectivity(t *testing.T){
 
 	//time.Sleep(30 * time.Second)
 
-	nscList := kubeapi.InitClientEndpoint(nscNamespace).GetPodList(mockNscLabels)
+	nscList := kubeapi.InitClientEndpoint(nscNamespace).GetPodListByLabel(mockNscLabels)
 	log.Printf("pod count: %v \n",len(nscList.Items))
 
 	// iterate through every NSC containers to ping all NSEs

@@ -13,19 +13,17 @@ import (
 )
 
 const (
-	serviceName  = "vl3-service"
-	imageName    = "busybox:1.28"
-	//replicaCount = 1
 	servicePort = 5000
 	servicePortName = "http"
 )
 
 var (
+	serviceName  = "vl3-service"
+	imageName    = "busybox:1.28"
 	busyboxPodLabel = "app=busybox-vl3-service"
-
 )
 
-// Create a mock deployment
+// Create Busybox deployment and Service
 func InitSetup( podRestartTime int, podRestartFreq int, restartIterPeriod int, replicaCount int){
 	dep := busyboxDeployment(podRestartTime, replicaCount)
 	deploymentClient := kubeapi.InitClientEndpoint(corev1.NamespaceDefault)
@@ -40,7 +38,7 @@ func InitSetup( podRestartTime int, podRestartFreq int, restartIterPeriod int, r
 	controller(dep, deploymentClient, podRestartTime, podRestartFreq, restartIterPeriod)
 }
 
-// Recreate a mock deployment
+// Recreate Busybox deployment
 func Setup(podRestartTime int, podRestartFreq int, restartIterPeriod int, replicaCount int) {
 	dep := busyboxDeployment(podRestartTime, replicaCount)
 	deploymentClient := kubeapi.InitClientEndpoint(corev1.NamespaceDefault)
@@ -51,6 +49,10 @@ func Setup(podRestartTime int, podRestartFreq int, restartIterPeriod int, replic
 	controller(dep, deploymentClient, podRestartTime, podRestartFreq, restartIterPeriod)
 }
 
+// The method contains the logic creating continuously restarting client pods
+// podRestartTime: restart rate (or wait time between restarts)
+// podRestartFreq: restart iteration count
+// restartIterPeriod: restart iteration time period (mutually exclusive from iteration count)
 func controller(dep *appsv1.Deployment, deploymentClient *kubeapi.KubernetesClientEndpoint , podRestartTime int, podRestartFreq int, restartIterPeriod int){
 	if podRestartFreq != 0 && restartIterPeriod != 0 {
 		deploymentClient.DeleteDeployment(dep)
@@ -64,7 +66,6 @@ func controller(dep *appsv1.Deployment, deploymentClient *kubeapi.KubernetesClie
 	}
 }
 
-
 func restartCountMode(podRestartFreq int, podRestartTime int, dep *appsv1.Deployment, endpoint *kubeapi.KubernetesClientEndpoint) {
 	for i := 1; i <= podRestartFreq; i++ {
 		log.Printf("restart count %v...", i)
@@ -75,7 +76,6 @@ func restartCountMode(podRestartFreq int, podRestartTime int, dep *appsv1.Deploy
 
 // This is busybox deployment replacing nsc helloworld for testing purposing
 func busyboxDeployment(podRestartTime int, replicaCount int) *appsv1.Deployment {
-	// type conversions to fit in appsv1.Deployment
 	val := int32(replicaCount)
 	var replicaCountptr *int32 = &val
 	podRestartTimeStr := strconv.Itoa(podRestartTime)
