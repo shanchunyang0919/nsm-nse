@@ -22,7 +22,6 @@ import (
 const(
 	vl3Namespace = "wcm-system"
 	vl3NSELabel = "networkservicemesh.io/app=vl3-nse-vl3-service"
-	//NSCLabel = "app=busybox-vl3-service"
 )
 
 type Container struct{
@@ -66,14 +65,6 @@ func GetNSELogs(kClient *kubeapi.KubernetesClientEndpoint, podName string, tails
 	return logs
 }
 
-func AssertNotMatch(logs string, assertMessage string) bool{
-	assertMsg := regexp.MustCompile(assertMessage)
-	matches := assertMsg.FindString(logs)
-	if matches == ""{
-		return true
-	}
-	return false
-}
 
 func AssertMatch(logs string, assertMessage string) bool{
 	assertMsg := regexp.MustCompile(assertMessage)
@@ -90,11 +81,11 @@ func AssertMatch(logs string, assertMessage string) bool{
 func ExecIntoPod(cmd []string, containerName string, podName string, namespace string, stdin io.Reader) (string, string, error){
 	kconfig := kubeapi.GetKubeConfig()
 	config := kubeapi.GetClientConfig(kconfig)
+
 	kClient, err := kubernetes.NewForConfig(config)
 	if err != nil{
 		log.Fatal(err)
 	}
-
 
 	req := kClient.CoreV1().RESTClient().Post().Resource("pods").Name(podName).
 		Namespace(namespace).SubResource("exec")
@@ -129,6 +120,7 @@ func ExecIntoPod(cmd []string, containerName string, podName string, namespace s
 	if err != nil {
 		return "", "", fmt.Errorf("error in Stream: %v", err)
 	}
+
 	return stdout.String(), stderr.String(), nil
 }
 
