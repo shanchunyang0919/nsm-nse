@@ -32,7 +32,7 @@ type Container struct{
 }
 
 var (
-	// match ping statistics - X packets transmitted, X packets received, X% packet loss
+	// This regex match ping statistics - X packets transmitted, X packets received, X% packet loss
 	linuxPingRegexp = regexp.MustCompile("\n([0-9]+) packets transmitted, ([0-9]+) packets received, ([0-9]+)% packet loss")
 )
 
@@ -54,13 +54,14 @@ func GetLogs(req *rest.Request) string{
 	return logs
 }
 
-// takes a pod name and returns the logs corresponding to the tail numbers, and also return a boolean to
-// validate if the logs match the regex
-func GetNSELogs(kClient *kubeapi.KubernetesClientEndpoint, assertMessage string, podName string, tails int) string{
+// Takes a pod name and returns the logs corresponding to the tail numbers, and also return a boolean to
+// validate if the logs match the regex.
+func GetNSELogs(kClient *kubeapi.KubernetesClientEndpoint, podName string, tails int) string{
 	var req *rest.Request
 
 	req = kClient.GetPodLogsTails(podName, tails)
 	//req = kClient.GetPodLogsSinceSeconds(podName, 3600)
+
 	logs := GetLogs(req)
 	return logs
 }
@@ -84,7 +85,8 @@ func AssertMatch(logs string, assertMessage string) bool{
 }
 
 
-// Access into specific container inside a pod and execute commands
+// Access into specific container inside a pod and execute commands.
+// it returns stdout, stderr, and error.
 func ExecIntoPod(cmd []string, containerName string, podName string, namespace string, stdin io.Reader) (string, string, error){
 	kconfig := kubeapi.GetKubeConfig()
 	config := kubeapi.GetClientConfig(kconfig)
@@ -131,7 +133,7 @@ func ExecIntoPod(cmd []string, containerName string, podName string, namespace s
 }
 
 
-// Perform linux Ping command with routing compartment identifier. This method returns stream output and
+// Perform linux Ping command with destination IP address. This method returns stream output and
 // boolean which determines if the output matches regex.
 func (c *Container) Ping(destIP string, packetTransmit int) (string, bool){
 	pingCmd := "ping -c " + strconv.Itoa(packetTransmit) + " " + destIP

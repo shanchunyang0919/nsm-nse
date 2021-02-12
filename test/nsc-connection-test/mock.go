@@ -38,8 +38,8 @@ func InitSetup( podRestartTime int, podRestartFreq int, restartIterPeriod int, r
 	controller(dep, deploymentClient, podRestartTime, podRestartFreq, restartIterPeriod)
 }
 
-// Recreate Busybox deployment
-func Setup(podRestartTime int, podRestartFreq int, restartIterPeriod int, replicaCount int) {
+// recreate Busybox deployment (without creating Service again)
+func ReSetup(podRestartTime int, podRestartFreq int, restartIterPeriod int, replicaCount int) {
 	dep := busyboxDeployment(podRestartTime, replicaCount)
 	deploymentClient := kubeapi.InitClientEndpoint(corev1.NamespaceDefault)
 

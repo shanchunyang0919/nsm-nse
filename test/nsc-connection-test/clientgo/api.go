@@ -40,7 +40,7 @@ type KubernetesClientEndpoint struct{
 
 func InitClientEndpoint(namespace string) *KubernetesClientEndpoint{
 	kconfig := GetKubeConfig()
-	clientSet := createClientset(kconfig)
+	clientSet := CreateClientset(kconfig)
 	return &KubernetesClientEndpoint{
 		Kubeconfig: kconfig,
 		Namespace: namespace,
@@ -48,7 +48,7 @@ func InitClientEndpoint(namespace string) *KubernetesClientEndpoint{
 	}
 }
 
-func createClientset(kconfig string) *kubernetes.Clientset {
+func CreateClientset(kconfig string) *kubernetes.Clientset {
 	config := GetClientConfig(kconfig)
 	clientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -67,6 +67,7 @@ func GetClientConfig(kconfig string) *rest.Config{
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	return config
 }
 
@@ -87,17 +88,19 @@ func (kc *KubernetesClientEndpoint) DeleteDeployment(dep *appsv1.Deployment){
 	}
 }
 
-// clean up busybox NSC delployment and NSC pods in zero grace period mode
-func (kc *KubernetesClientEndpoint) CleanUpNSC(dep *appsv1.Deployment){
+// Completely clean up busybox NSC deployment and NSC pods in zero grace period mode.
+// Making deletion API calls only on development-level will not immediately delete pods.
+// Must also delete pods with zero grace period to reduce the wait time of pods TERMINATING status.
+func (kc *KubernetesClientEndpoint) CleanUpNSCs(dep *appsv1.Deployment){
 	kc.DeleteDeployment(dep)
 	kc.DeletePodByLabel(nscLabel)
 }
 
 // Clean up the NSC deployment and NSC pods with zero grace period and re-deploy the NSC deployment.
 // This method will return after all busybox containers are in READY status.
-// For testing purposes only, must need to set a timeout option for it.
+// For testing purposes only, must need to set timeout option for it.
 func (kc *KubernetesClientEndpoint) ReCreateNSCDeployment(dep *appsv1.Deployment) {
-	kc.CleanUpNSC(dep)
+	kc.CleanUpNSCs(dep)
 	time.Sleep(time.Millisecond * waitTimeMs)
 	kc.CreateDeployment(dep)
 	// check if all the busybox containers are running
@@ -119,6 +122,9 @@ func (kc *KubernetesClientEndpoint) ReCreateNSCDeployment(dep *appsv1.Deployment
 					break
 				}
 			}
+			if hasNotReadyContainer{
+				break
+			}
 		}
 		if hasNotReadyContainer == false{
 			break
@@ -126,6 +132,7 @@ func (kc *KubernetesClientEndpoint) ReCreateNSCDeployment(dep *appsv1.Deployment
 		hasNotReadyContainer = true
 		time.Sleep(time.Millisecond * waitTimeMs)
 	}
+	log.Print("all nsc containers are ready...")
 }
 
 // Delete selected pods with selected label, the grace period is set to 0 here.
@@ -173,8 +180,6 @@ func (kc *KubernetesClientEndpoint) GetPodIP(podName string) string{
 
 	return pod.Status.PodIP
 }
-
-
 
 func (kc *KubernetesClientEndpoint) CreateService(service *corev1.Service){
 	_, err := kc.ClientSet.CoreV1().Services(kc.Namespace).Create(context.TODO(),
