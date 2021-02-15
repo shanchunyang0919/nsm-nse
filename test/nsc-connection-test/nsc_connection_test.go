@@ -105,6 +105,7 @@ func TestLogs(t *testing.T) {
 			restartIterPeriod: 0,
 			replicaCount:      1,
 		},
+
 	}
 	// taking lines of logs
 	var tails = 20
@@ -131,7 +132,7 @@ func TestLogs(t *testing.T) {
 					", restart iteration period: %v(s)\n",
 					test.podRestartTime, test.podRestartFreq, test.restartIterPeriod)
 
-				log.Printf("Asseting message: %v", errMsg)
+				log.Printf("Asserting message: %v", errMsg)
 				log.Print(logsCaptured)
 			}
 			fail := AssertMatch(logsCaptured, errMsg)
@@ -194,7 +195,7 @@ func TestConnectivity(t *testing.T) {
 			podRestartTime:    5000,
 			podRestartFreq:    0,
 			restartIterPeriod: 0,
-			replicaCount:      1,
+			replicaCount:      2,
 		},
 	}
 	for _, test := range testCases {
@@ -204,6 +205,7 @@ func TestConnectivity(t *testing.T) {
 		ReSetup(test.podRestartTime, test.podRestartFreq, test.restartIterPeriod, test.replicaCount)
 		nscList := kubeapi.InitClientEndpoint(nscNamespace).GetPodListByLabel(nscLabel)
 		// iterate through every NSC containers to ping all NSEs
+
 		for _, pod := range nscList.Items {
 			successfulConnection = false
 			c = &Container{
@@ -233,3 +235,5 @@ func TestConnectivity(t *testing.T) {
 		}
 	}
 }
+
+

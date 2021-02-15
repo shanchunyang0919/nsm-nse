@@ -22,10 +22,14 @@ Iteration Time Period** is how long the pod is going to live until it gets delet
 - **Go 1.14+**
 
 ####Environmnet Variables (set by default)
-- **LOG**=on (Logging Mode. It could be set to **off**) 
-- **TIMEMOUT**=300 (Timeout flag for go test. The unit is **second**)
-- **INIT**=on (After running the script, could be set to **off** to run **go test CLI**)
-- **NSE**=1 (Specify the numbers of NSEs to be deployed.)
+
+| ENV VAR | Default       | Description |
+| ---------- |:-------------:| -----:|
+| `LOG`      | `on` | Logs will be printed.|
+| `TIMEMOUT` | `300`      |   Timeout flag for go test. The unit is **second** |
+| `INIT`| `on` | After running the script, could set to **off** to run go test CLI.|
+| `NSE` | `1`| Specify the numbers of NSEs to be deployed.|
+
 
 ####Demo 
 ```bash

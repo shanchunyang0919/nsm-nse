@@ -90,6 +90,7 @@ func ExecIntoPod(cmd []string, containerName string, podName string, namespace s
 		log.Fatal(err)
 	}
 
+
 	req := kClient.CoreV1().RESTClient().Post().Resource("pods").Name(podName).
 		Namespace(namespace).SubResource("exec")
 
