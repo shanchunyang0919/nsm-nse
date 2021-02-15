@@ -1,51 +1,56 @@
 package test_helper
 
 import (
-	"bytes"
-	"context"
-	"fmt"
-	"strconv"
+
 	"io"
+	"log"
+	"fmt"
+	"bytes"
+	"regexp"
+	"context"
+	"strconv"
 	"strings"
-	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
-	"log"
-	"regexp"
 
-	//corev1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	kubeapi "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
 )
 
-const(
-	vl3Namespace = "wcm-system"
-	vl3NSELabel = "networkservicemesh.io/app=vl3-nse-vl3-service"
-)
-
-type Container struct{
+// A container inside a specific pod.
+// In our case, it will the be container "busybox" inside pod "busybox-vl3-service" under default namespace.
+type Container struct {
 	ContainerName string
-	PodName string
-	Namespace string
+	PodName       string
+	Namespace     string
 }
 
 var (
 	// This regex match ping statistics - X packets transmitted, X packets received, X% packet loss
-	linuxPingRegexp = regexp.MustCompile("\n([0-9]+) packets transmitted, ([0-9]+) packets received, ([0-9]+)% packet loss")
+	PingRegex = regexp.MustCompile("\n([0-9]+) packets transmitted, ([0-9]+) packets received, ([0-9]+)% packet loss")
 )
 
-
 // Reads pod logs request and print out the logs with I/O package
-func GetLogs(req *rest.Request) string{
+func GetLogs(req *rest.Request) string {
 	podLogs, err := req.Stream(context.TODO())
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
-	defer podLogs.Close()
+
+	// defer podLogs.Close()
+	defer func(){
+		err = podLogs.Close()
+		if err != nil{
+			log.Fatal(err)
+		}
+	}()
+
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, podLogs)
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
 	logs := buf.String()
@@ -55,7 +60,7 @@ func GetLogs(req *rest.Request) string{
 
 // Takes a pod name and returns the logs corresponding to the tail numbers, and also return a boolean to
 // validate if the logs match the regex.
-func GetNSELogs(kClient *kubeapi.KubernetesClientEndpoint, podName string, tails int) string{
+func GetNSELogs(kClient *kubeapi.KubernetesClientEndpoint, podName string, tails int) string {
 	var req *rest.Request
 
 	req = kClient.GetPodLogsTails(podName, tails)
@@ -65,25 +70,23 @@ func GetNSELogs(kClient *kubeapi.KubernetesClientEndpoint, podName string, tails
 	return logs
 }
 
-
-func AssertMatch(logs string, assertMessage string) bool{
+func AssertMatch(logs string, assertMessage string) bool {
 	assertMsg := regexp.MustCompile(assertMessage)
 	matches := assertMsg.FindString(logs)
-	if matches == ""{
+	if matches == "" {
 		return false
 	}
 	return true
 }
 
-
 // Access into specific container inside a pod and execute commands.
-// it returns stdout, stderr, and error.
-func ExecIntoPod(cmd []string, containerName string, podName string, namespace string, stdin io.Reader) (string, string, error){
+// It returns stdout, stderr, and error.
+func ExecIntoPod(cmd []string, containerName string, podName string, namespace string, stdin io.Reader) (string, string, error) {
 	kconfig := kubeapi.GetKubeConfig()
 	config := kubeapi.GetClientConfig(kconfig)
 
 	kClient, err := kubernetes.NewForConfig(config)
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -91,7 +94,7 @@ func ExecIntoPod(cmd []string, containerName string, podName string, namespace s
 		Namespace(namespace).SubResource("exec")
 
 	scheme := runtime.NewScheme()
-	if err := corev1.AddToScheme(scheme); err != nil{
+	if err := corev1.AddToScheme(scheme); err != nil {
 		return "", "", fmt.Errorf("error adding to scheme")
 	}
 
@@ -124,10 +127,9 @@ func ExecIntoPod(cmd []string, containerName string, podName string, namespace s
 	return stdout.String(), stderr.String(), nil
 }
 
-
 // Perform linux Ping command with destination IP address. This method returns stream output and
 // boolean which determines if the output matches regex.
-func (c *Container) Ping(destIP string, packetTransmit int) (string, bool){
+func (c *Container) Ping(destIP string, packetTransmit int) (string, bool) {
 	pingCmd := "ping -c " + strconv.Itoa(packetTransmit) + " " + destIP
 	cmd := []string{"sh", "-c", pingCmd}
 
@@ -136,45 +138,36 @@ func (c *Container) Ping(destIP string, packetTransmit int) (string, bool){
 	if len(stderr) != 0 {
 		log.Fatal("stderr:", stderr)
 	}
-	if err != nil{
+	if err != nil {
 		// having problems pinging
 		log.Print(err)
 		return "", false
 	}
 
-	matches := linuxPingRegexp.FindString(stdout)
-	if matches == ""{
+	matches := PingRegex.FindString(stdout)
+	if matches == "" {
 		// cannot transmit packet
 		return "", false
 	}
 	// check for packet loss
 	args := strings.Split(strings.Split(matches, ",")[2], "%")
 	packetLossPercentage, err := strconv.Atoi(strings.TrimPrefix(args[0], " "))
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
 
-	if packetLossPercentage != 0{
+	if packetLossPercentage != 0 {
 		log.Print("packet loss is not 0%")
 		return "", false
 	}
+
 	return stdout, true
 }
 
-// iterate through lists of containers within a pod and print out its name and rstart count
-func GetContainersRestartCount(pod *corev1.Pod){
-	for _,  containerStatus := range pod.Status.ContainerStatuses{
+// Iterate through lists of containers within a pod and print out its name and restart count.
+func GetContainersRestartCount(pod *corev1.Pod) {
+	for _, containerStatus := range pod.Status.ContainerStatuses {
 		log.Printf("Container Name %v, Restart Count: %v\n",
 			containerStatus.Name, containerStatus.RestartCount)
 	}
 }
-
-
-
-
-
-
-
-
-
-

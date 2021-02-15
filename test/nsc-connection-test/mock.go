@@ -13,18 +13,18 @@ import (
 )
 
 const (
-	servicePort = 5000
+	servicePort     = 5000
 	servicePortName = "http"
 )
 
 var (
-	serviceName  = "vl3-service"
-	imageName    = "busybox:1.28"
+	serviceName     = "vl3-service"
+	imageName       = "busybox:1.28"
 	busyboxPodLabel = "app=busybox-vl3-service"
 )
 
 // Create Busybox deployment and Service
-func InitSetup( podRestartTime int, podRestartFreq int, restartIterPeriod int, replicaCount int){
+func InitSetup(podRestartTime int, podRestartFreq int, restartIterPeriod int, replicaCount int) {
 	dep := busyboxDeployment(podRestartTime, replicaCount)
 	deploymentClient := kubeapi.InitClientEndpoint(corev1.NamespaceDefault)
 
@@ -53,7 +53,7 @@ func ReSetup(podRestartTime int, podRestartFreq int, restartIterPeriod int, repl
 // podRestartTime: restart rate (or wait time between restarts)
 // podRestartFreq: restart iteration count
 // restartIterPeriod: restart iteration time period (mutually exclusive from iteration count)
-func controller(dep *appsv1.Deployment, deploymentClient *kubeapi.KubernetesClientEndpoint , podRestartTime int, podRestartFreq int, restartIterPeriod int){
+func controller(dep *appsv1.Deployment, deploymentClient *kubeapi.KubernetesClientEndpoint, podRestartTime int, podRestartFreq int, restartIterPeriod int) {
 	if podRestartFreq != 0 && restartIterPeriod != 0 {
 		deploymentClient.DeleteDeployment(dep)
 		log.Fatal("the iteration period and pod restart count should be mutually exclusive")
@@ -124,12 +124,12 @@ func busyboxDeployment(podRestartTime int, replicaCount int) *appsv1.Deployment 
 	}
 }
 
-func busyboxService() *corev1.Service{
+func busyboxService() *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "busybox-" + serviceName,
 			Labels: map[string]string{
-				"app": "busybox-" + serviceName,
+				"app":      "busybox-" + serviceName,
 				"nsm/role": "client",
 			},
 		},

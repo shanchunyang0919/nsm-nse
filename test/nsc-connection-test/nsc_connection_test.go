@@ -13,33 +13,31 @@ import (
 	. "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/test_helper"
 
 	kubeapi "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
-
 )
 
-const(
+const (
 
-	// initialize mock deployment
-	initPodRestartTime = 3000
-	initPodRestartFreq = 0
+	// Initialize mock deployment
+	initPodRestartTime    = 3000
+	initPodRestartFreq    = 0
 	initRestartIterPeriod = 0
-	initReplicaCount = 1
-	defaultImageName = "busybox:1.28"
-	vl3NSELabel = "networkservicemesh.io/app=vl3-nse-vl3-service"
+	initReplicaCount      = 1
+	defaultImageName      = "busybox:1.28"
+	vl3NSELabel           = "networkservicemesh.io/app=vl3-nse-vl3-service"
 
-	// Connectivity
-	nscNamespace = "default"
+	// Connectivity Test
+	nscNamespace     = "default"
 	nscContainerName = "busybox"
-	vl3Namespace = "wcm-system"
-	nscLabel = "app=busybox-vl3-service"
-	packetTransmit = 1
-
+	vl3Namespace     = "wcm-system"
+	nscLabel         = "app=busybox-vl3-service"
+	packetTransmit   = 1
 )
 
 var (
-	errMsgs = []string{"too many open files"}
+	errMsgs   = []string{"too many open files"}
 	INIT_MODE = os.Getenv("INIT")
-	LOG_MODE = os.Getenv("LOG")
-	TIMEOUT = os.Getenv("TIMEOUT")
+	LOG_MODE  = os.Getenv("LOG")
+	TIMEOUT   = os.Getenv("TIMEOUT")
 )
 
 func TestMain(m *testing.M) {
@@ -48,7 +46,7 @@ func TestMain(m *testing.M) {
 	log.Println("LOG MODE:", LOG_MODE)
 	log.Println("TIMEOUT:", TIMEOUT)
 	limit, err := strconv.Atoi(TIMEOUT)
-	if err != nil{
+	if err != nil {
 		// timeout must be set
 		log.Fatal(err)
 	}
@@ -71,16 +69,15 @@ func TestMain(m *testing.M) {
 	}
 }
 
-type MockNSC struct{
-	podRestartTime int
-	podRestartFreq int
+type MockNSC struct {
+	podRestartTime    int
+	podRestartFreq    int
 	restartIterPeriod int
-	replicaCount int
+	replicaCount      int
 }
 
-
-func TestLogs(t *testing.T){
-	if testing.Short(){
+func TestLogs(t *testing.T) {
+	if testing.Short() {
 		t.Skip("skip log test")
 	}
 
@@ -91,22 +88,22 @@ func TestLogs(t *testing.T){
 	log.Printf("----- Logs Tests -----")
 	testCases := []MockNSC{
 		{
-			podRestartTime: 20,
-			podRestartFreq: 0,
+			podRestartTime:    20,
+			podRestartFreq:    0,
 			restartIterPeriod: 5,
-			replicaCount: 1,
+			replicaCount:      1,
 		},
 		{
-			podRestartTime: 20,
-			podRestartFreq: 0,
+			podRestartTime:    20,
+			podRestartFreq:    0,
 			restartIterPeriod: 10,
-			replicaCount: 1,
+			replicaCount:      1,
 		},
 		{
-			podRestartTime: 20,
-			podRestartFreq: 2,
+			podRestartTime:    20,
+			podRestartFreq:    2,
 			restartIterPeriod: 0,
-			replicaCount: 1,
+			replicaCount:      1,
 		},
 	}
 	// taking lines of logs
@@ -116,11 +113,11 @@ func TestLogs(t *testing.T){
 	// TODO: make sure what error msg it is
 	var errMsg = "level=error"
 
-	for testNum, test  := range testCases{
+	for testNum, test := range testCases {
 		ReSetup(test.podRestartTime, test.podRestartFreq, test.restartIterPeriod, test.replicaCount)
 
 		// Prints out NSC restart counts
-		for _, nscPod := range NSCClient.GetPodListByLabel(nscLabel).Items{
+		for _, nscPod := range NSCClient.GetPodListByLabel(nscLabel).Items {
 			GetContainersRestartCount(&nscPod)
 		}
 
@@ -130,7 +127,7 @@ func TestLogs(t *testing.T){
 
 			if LOG_MODE == "on" {
 				log.Printf("Test Case: %v\n", testNum)
-				log.Printf("Pod restart time: %v(s), Pod restart frequency: %v(s)" +
+				log.Printf("Pod restart time: %v(s), Pod restart frequency: %v(s)"+
 					", restart iteration period: %v(s)\n",
 					test.podRestartTime, test.podRestartFreq, test.restartIterPeriod)
 
@@ -138,7 +135,7 @@ func TestLogs(t *testing.T){
 				log.Print(logsCaptured)
 			}
 			fail := AssertMatch(logsCaptured, errMsg)
-			if fail{
+			if fail {
 				log.Printf("Test Case: %v FAIL\n", testNum)
 				log.Fatalf("Error message \"%v\" found.", errMsg)
 			}
@@ -163,7 +160,7 @@ func TestLoad(t *testing.T){
 			podRestartTime:    20,
 			podRestartFreq:    0,
 			restartIterPeriod: 5,
-			replicaCount:      1,
+			replicaCount:      30,
 		},
 	}
 	for testNum, test  := range testCases{
@@ -176,10 +173,10 @@ func TestLoad(t *testing.T){
 	}
 }
 
- */
+*/
 
 // NS connectivity test after the iteration of repeated bring up/down runs.
-func TestConnectivity(t *testing.T){
+func TestConnectivity(t *testing.T) {
 	//setup
 	clientWCM := kubeapi.InitClientEndpoint(vl3Namespace)
 	vl3List := clientWCM.GetPodListByLabel(vl3NSELabel)
@@ -197,40 +194,41 @@ func TestConnectivity(t *testing.T){
 			podRestartTime:    5000,
 			podRestartFreq:    0,
 			restartIterPeriod: 0,
-			replicaCount:      5,
+			replicaCount:      1,
 		},
 	}
-	for _, test := range testCases{
+	for _, test := range testCases {
 		var c *Container
 		var vl3DestIP string
-		var connectionCount int
+		var successfulConnection bool
 		ReSetup(test.podRestartTime, test.podRestartFreq, test.restartIterPeriod, test.replicaCount)
 		nscList := kubeapi.InitClientEndpoint(nscNamespace).GetPodListByLabel(nscLabel)
 		// iterate through every NSC containers to ping all NSEs
-		for _, pod := range nscList.Items{
-			connectionCount = 0
+		for _, pod := range nscList.Items {
+			successfulConnection = false
 			c = &Container{
 				ContainerName: nscContainerName,
-				PodName: pod.Name,
-				Namespace: nscNamespace,
+				PodName:       pod.Name,
+				Namespace:     nscNamespace,
 			}
-
 			for podNum, vl3pod := range vl3List.Items {
 				vl3DestIP = clientWCM.GetPodIP(vl3pod.Name)
 				logs, success := c.Ping(vl3DestIP, packetTransmit)
 
-				if LOG_MODE == "on"{
+				if LOG_MODE == "on" {
 					log.Printf("Pod: %v, %v\n", podNum+1, c.PodName)
 					log.Printf("Ping from container \"%s\" to address %s\n",
 						c.ContainerName, vl3DestIP)
 					log.Println(logs)
 				}
-				if success{
-					connectionCount++
+				if success {
+					// at least one vl3 NSE is connected to NSC
+					successfulConnection = true
+					break
 				}
 			}
-			if connectionCount == 0{
-				t.Fatal("no successful connections")
+			if !successfulConnection {
+				t.Fatalf("error: pod %v has no successful connections\n", pod.Name)
 			}
 		}
 	}
