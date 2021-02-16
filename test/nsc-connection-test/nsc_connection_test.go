@@ -2,6 +2,10 @@ package connection_test
 
 import (
 	//metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"errors"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	"log"
 	"os"
 	"strconv"
@@ -12,48 +16,88 @@ import (
 	. "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test"
 	. "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/test_helper"
 
-	kubeapi "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
+	cgo "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 const (
-
 	// Initialize mock deployment
-	initPodRestartTime    = 3000
-	initPodRestartFreq    = 0
-	initRestartIterPeriod = 0
-	initReplicaCount      = 1
-	defaultImageName      = "busybox:1.28"
-	vl3NSELabel           = "networkservicemesh.io/app=vl3-nse-vl3-service"
+	initPodRestartRate = 3000
+	initReplicaCount   = 1
 
-	// Connectivity Test
-	nscNamespace     = "default"
+	// labels
+	nsmgrLabel = "app=nsmgr-daemonset"
+	nscLabel   = "app=busybox-vl3-service"
+	vl3Label   = "networkservicemesh.io/app=vl3-nse-vl3-service"
+
+	// namespaces
+	nscNamespace = "default"
+	wcmNamespace = "wcm-system"
+	nsmNamespace = "nsm-system"
+
+	// containername
 	nscContainerName = "busybox"
-	vl3Namespace     = "wcm-system"
-	nscLabel         = "app=busybox-vl3-service"
-	packetTransmit   = 1
+	vl3ContainerName = "vl3-nse"
+	nsmgrContainerName = "nsmd"
+
+	// connectivity test
+	packetTransmit = 1
 )
 
 var (
-	errMsgs   = []string{"too many open files"}
-	INIT_MODE = os.Getenv("INIT")
-	LOG_MODE  = os.Getenv("LOG")
-	TIMEOUT   = os.Getenv("TIMEOUT")
+	// environment variables
+	INIT_MODE string
+	TIMEOUT   int
+	NSE_LOG   int
+	NSMGR_LOG int
+	PING_LOG  string
+	LOG       string
 )
 
-func TestMain(m *testing.M) {
-
+func setEnvironmentVariables() error {
+	INIT_MODE = os.Getenv("INIT")
 	log.Println("INIT MODE:", INIT_MODE)
-	log.Println("LOG MODE:", LOG_MODE)
+
+	var err error
+
+	TIMEOUT, err = strconv.Atoi(os.Getenv("TIMEOUT"))
+	if err != nil || TIMEOUT < 0 {
+		return errors.New("error setting TIMEOUT")
+	}
 	log.Println("TIMEOUT:", TIMEOUT)
-	limit, err := strconv.Atoi(TIMEOUT)
+
+	NSE_LOG, err = strconv.Atoi(os.Getenv("NSE_LOG"))
+	if err != nil || NSE_LOG < 0 {
+		return errors.New("error setting NSE_LOG")
+	}
+	log.Println("NSE_LOG:", NSE_LOG)
+
+	NSMGR_LOG, err = strconv.Atoi(os.Getenv("NSMGR_LOG"))
+	if err != nil || NSMGR_LOG < 0 {
+		return errors.New("error setting NSMGR_LOG")
+	}
+	log.Println("NSMGR_LOG:", NSMGR_LOG)
+
+	PING_LOG = os.Getenv("INIT")
+	log.Println("PING_LOG:", PING_LOG)
+
+	// turn off log mode
+	LOG = os.Getenv("LOG")
+	if LOG == "off" {
+		NSE_LOG = 0
+		NSMGR_LOG = 0
+		PING_LOG = "off"
+	}
+
+	return nil
+}
+
+func TestMain(m *testing.M) {
+	err := setEnvironmentVariables()
 	if err != nil {
-		// timeout must be set
 		log.Fatal(err)
 	}
-	if (INIT_MODE) == "on" {
-		InitSetup(initPodRestartTime, initPodRestartFreq, initRestartIterPeriod, initReplicaCount)
-	}
-	timeout := time.After(time.Second * time.Duration(limit))
+	timeout := time.After(time.Second * time.Duration(TIMEOUT))
 	done := make(chan bool)
 
 	// it waits either the done channel to finish or timeout
@@ -69,171 +113,159 @@ func TestMain(m *testing.M) {
 	}
 }
 
-type MockNSC struct {
-	podRestartTime    int
-	podRestartFreq    int
-	restartIterPeriod int
-	replicaCount      int
+
+type BounceParameters struct {
+	podRestartRate         int
+	podRestartFrequency    int
+	restartIterationPeriod int
+	replicaCount           int
 }
-
-func TestLogs(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skip log test")
-	}
-
-	vl3Client := kubeapi.InitClientEndpoint(vl3Namespace)
-	NSCClient := kubeapi.InitClientEndpoint(nscNamespace)
-	vl3List := vl3Client.GetPodListByLabel(vl3NSELabel)
-
-	log.Printf("----- Logs Tests -----")
-	testCases := []MockNSC{
-		{
-			podRestartTime:    20,
-			podRestartFreq:    0,
-			restartIterPeriod: 5,
-			replicaCount:      1,
-		},
-		{
-			podRestartTime:    20,
-			podRestartFreq:    0,
-			restartIterPeriod: 10,
-			replicaCount:      1,
-		},
-		{
-			podRestartTime:    20,
-			podRestartFreq:    2,
-			restartIterPeriod: 0,
-			replicaCount:      1,
-		},
-
-	}
-	// taking lines of logs
-	var tails = 20
-
-	// asserting this message
-	// TODO: make sure what error msg it is
-	var errMsg = "level=error"
-
-	for testNum, test := range testCases {
-		ReSetup(test.podRestartTime, test.podRestartFreq, test.restartIterPeriod, test.replicaCount)
-
-		// Prints out NSC restart counts
-		for _, nscPod := range NSCClient.GetPodListByLabel(nscLabel).Items {
-			GetContainersRestartCount(&nscPod)
-		}
-
-		// iterate through all the NSEs to search for errors logs
-		for _, pod := range vl3List.Items {
-			logsCaptured := GetNSELogs(vl3Client, pod.Name, tails)
-
-			if LOG_MODE == "on" {
-				log.Printf("Test Case: %v\n", testNum)
-				log.Printf("Pod restart time: %v(s), Pod restart frequency: %v(s)"+
-					", restart iteration period: %v(s)\n",
-					test.podRestartTime, test.podRestartFreq, test.restartIterPeriod)
-
-				log.Printf("Asserting message: %v", errMsg)
-				log.Print(logsCaptured)
-			}
-			fail := AssertMatch(logsCaptured, errMsg)
-			if fail {
-				log.Printf("Test Case: %v FAIL\n", testNum)
-				log.Fatalf("Error message \"%v\" found.", errMsg)
-			}
-		}
-	}
-}
-
-/*
-// deploy & reploy serveral amounts of pods to see if nsmgr crashes
-func TestLoad(t *testing.T){
-	if testing.Short(){
-		t.Skip("skip load test")
-	}
-	log.Printf("------------ Loading Tests ------------")
-	testCases := []struct{
-		podRestartTime int
-		podRestartFreq int
-		restartIterPeriod int
-		replicaCount int
-	}{
-		{
-			podRestartTime:    20,
-			podRestartFreq:    0,
-			restartIterPeriod: 5,
-			replicaCount:      30,
-		},
-	}
-	for testNum, test  := range testCases{
-		if LOG_MODE == "on" {
-			log.Printf("Test Case: %v\n", testNum)
-			ReSetup(test.podRestartTime, test.podRestartFreq, test.restartIterPeriod)
-			// TODO: Assert statement here
-		}
-
-	}
-}
-
-*/
 
 // NS connectivity test after the iteration of repeated bring up/down runs.
 func TestConnectivity(t *testing.T) {
-	//setup
-	clientWCM := kubeapi.InitClientEndpoint(vl3Namespace)
-	vl3List := clientWCM.GetPodListByLabel(vl3NSELabel)
-
-	log.Print("----- Connectivity Tests -----")
-
-	testCases := []MockNSC{
-		{
-			podRestartTime:    5000,
-			podRestartFreq:    0,
-			restartIterPeriod: 0,
-			replicaCount:      1,
-		},
-		{
-			podRestartTime:    5000,
-			podRestartFreq:    0,
-			restartIterPeriod: 0,
-			replicaCount:      2,
-		},
+	if (INIT_MODE) == "on" {
+		err := Init(initPodRestartRate, initReplicaCount)
+		if err != nil{
+			log.Fatal(err)
+		}
 	}
-	for _, test := range testCases {
-		var c *Container
-		var vl3DestIP string
-		var successfulConnection bool
-		ReSetup(test.podRestartTime, test.podRestartFreq, test.restartIterPeriod, test.replicaCount)
-		nscList := kubeapi.InitClientEndpoint(nscNamespace).GetPodListByLabel(nscLabel)
-		// iterate through every NSC containers to ping all NSEs
+	//setup
+	defaultClientEndpoint := cgo.InitClientEndpoint(metav1.NamespaceDefault)
+	wcmClientEndpoint := cgo.InitClientEndpoint(wcmNamespace)
+	vl3PodList := wcmClientEndpoint.GetPodListByLabel(vl3Label)
 
-		for _, pod := range nscList.Items {
-			successfulConnection = false
-			c = &Container{
-				ContainerName: nscContainerName,
-				PodName:       pod.Name,
-				Namespace:     nscNamespace,
-			}
-			for podNum, vl3pod := range vl3List.Items {
-				vl3DestIP = clientWCM.GetPodIP(vl3pod.Name)
-				logs, success := c.Ping(vl3DestIP, packetTransmit)
+	// get list of nsmgr
+	var nsmgrPodList *corev1.PodList
+	var nsmClientEndpoint *cgo.KubernetesClientEndpoint
+	if NSMGR_LOG > 0 {
+		nsmClientEndpoint = cgo.InitClientEndpoint(nsmNamespace)
+		nsmgrPodList = nsmClientEndpoint.GetPodListByLabel(nsmgrLabel)
+	}
 
-				if LOG_MODE == "on" {
-					log.Printf("Pod: %v, %v\n", podNum+1, c.PodName)
-					log.Printf("Ping from container \"%s\" to address %s\n",
-						c.ContainerName, vl3DestIP)
-					log.Println(logs)
-				}
-				if success {
-					// at least one vl3 NSE is connected to NSC
-					successfulConnection = true
-					break
-				}
+	log.Print("bouncing...")
+
+	params := []BounceParameters{
+		{
+			podRestartRate:         20,
+			podRestartFrequency:    0,
+			restartIterationPeriod: 0,
+			replicaCount:           1,
+		},
+		//{
+		//	podRestartRate:         40,
+		//	podRestartFrequency:    0,
+		//	restartIterationPeriod: 20,
+		//	replicaCount:           1,
+		//},
+		//{
+		//	podRestartRate:         40,
+		//	podRestartFrequency:    10,
+		//	restartIterationPeriod: 0,
+		//	replicaCount:           1,
+		//},
+	}
+
+	for _, param := range params {
+		nscDeployment, err := ReSetup(param.podRestartRate, param.replicaCount)
+		log.Printf("pod restart rate: %v, pod restart frequency: %v, restart iteration period: %v," +
+			"replica count: %v\n", param.podRestartRate, param.podRestartFrequency,
+			param.restartIterationPeriod, param.replicaCount)
+		if err != nil{
+			log.Fatal(err)
+		}
+		bounce(nscDeployment, defaultClientEndpoint, param.podRestartRate,
+			param.podRestartFrequency, param.restartIterationPeriod)
+		// loggers
+		if NSE_LOG > 0 {
+			nsePodList := wcmClientEndpoint.GetPodListByLabel(vl3Label)
+			for _, nsePod := range nsePodList.Items {
+				displayPodLogs(wcmClientEndpoint, nsePod, NSE_LOG, vl3ContainerName)
 			}
-			if !successfulConnection {
-				t.Fatalf("error: pod %v has no successful connections\n", pod.Name)
+		}
+		if nsmgrPodList != nil {
+			for _, nsmgrPod := range nsmgrPodList.Items {
+				displayPodLogs(nsmClientEndpoint, nsmgrPod, NSMGR_LOG, nsmgrContainerName)
 			}
 		}
 	}
+
+	log.Print("----- Connectivity Tests -----")
+
+	var c *Container
+	var vl3DestIP string
+	var successfulConnection bool
+
+	depForConnTest := struct {
+		podRestartRate int
+		replicaCount   int
+	}{5000, 1}
+	ReSetup(depForConnTest.podRestartRate, depForConnTest.replicaCount)
+
+	nscPodList := defaultClientEndpoint.GetPodListByLabel(nscLabel)
+
+	// iterate through every NSC containers to ping all NSEs
+	for _, nscPod := range nscPodList.Items {
+		successfulConnection = false
+		c = &Container{
+			ContainerName: nscContainerName,
+			PodName:       nscPod.Name,
+			Namespace:     nscNamespace,
+		}
+		for podNum, vl3Pod := range vl3PodList.Items {
+			vl3DestIP = wcmClientEndpoint.GetPodIP(vl3Pod.Name)
+			logs, success := c.Ping(vl3DestIP, packetTransmit)
+
+			if PING_LOG == "on" {
+				log.Printf("Pod: %v, %v\n", podNum+1, c.PodName)
+				log.Printf("Ping from container \"%s\" to address %s\n",
+					c.ContainerName, vl3DestIP)
+				log.Println(logs)
+			}
+			if success {
+				// at least one vl3 NSE is connected to NSC
+				successfulConnection = true
+				break
+			}
+		}
+		if !successfulConnection {
+			t.Fatalf("error: pod %v has no successful connections\n", nscPod.Name)
+		}
+	}
+
 }
 
+// The method contains the logic creating continuously restarting client pods
+// podRestartRate: restart rate (or wait time between restarts)
+// podRestartFrequency: restart iteration count
+// restartIterationPeriod: restart iteration time period (mutually exclusive from iteration count)
+func bounce(dep *appsv1.Deployment, endpoint *cgo.KubernetesClientEndpoint, podRestartRate int, podRestartFrequency int, restartIterationPeriod int) {
+	if podRestartFrequency != 0 && restartIterationPeriod != 0 {
+		endpoint.DeleteDeployment(dep)
+		log.Fatal("the iteration period and pod restart count should be mutually exclusive")
+	} else if restartIterationPeriod > 0 {
+		log.Printf("iterating for %v seconds...", restartIterationPeriod)
+		time.Sleep(time.Second * time.Duration(restartIterationPeriod))
+		endpoint.ReCreateNSCDeployment(dep)
+	} else if podRestartFrequency > 0 {
+		restartCountMode(dep, endpoint, podRestartRate, podRestartFrequency)
+	}
+}
 
+func restartCountMode( dep *appsv1.Deployment, endpoint *cgo.KubernetesClientEndpoint, podRestartRate int, podRestartFrequency int) {
+	for i := 1; i <= podRestartFrequency; i++ {
+		log.Printf("restart count %v...", i)
+		endpoint.ReCreateNSCDeployment(dep)
+		time.Sleep(time.Second * time.Duration(podRestartRate))
+	}
+}
+
+// Display pod logs and container counts
+func displayPodLogs(kC *cgo.KubernetesClientEndpoint, pod corev1.Pod, tails int, containerName string) {
+	log.Println("display logs for pod", pod.Name)
+	var req *rest.Request
+	req = kC.GetPodLogsTails(pod.Name, tails, containerName)
+	logs := GetLogs(req)
+
+	log.Print(logs)
+	DisplayContainersRestartCount(pod)
+}

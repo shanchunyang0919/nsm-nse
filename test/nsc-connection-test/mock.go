@@ -1,15 +1,14 @@
 package connection
 
 import (
-	"log"
-	"strconv"
-	"time"
-
+	"errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"log"
+	"strconv"
 
-	kubeapi "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
+	cgo "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
 )
 
 const (
@@ -18,67 +17,51 @@ const (
 )
 
 var (
-	serviceName     = "vl3-service"
-	imageName       = "busybox:1.28"
-	busyboxPodLabel = "app=busybox-vl3-service"
+	serviceName = "vl3-service"
+	imageName   = "busybox:1.28"
 )
 
 // Create Busybox deployment and Service
-func InitSetup(podRestartTime int, podRestartFreq int, restartIterPeriod int, replicaCount int) {
-	dep := busyboxDeployment(podRestartTime, replicaCount)
-	deploymentClient := kubeapi.InitClientEndpoint(corev1.NamespaceDefault)
-
-	log.Print("create service...")
-	svc := busyboxService()
-	deploymentClient.CreateService(svc)
-
-	log.Print("create deployment...")
+func Init(podRestartRate int, replicaCount int) error{
+	log.Println("initializing...")
+	dep := busyboxDeployment(podRestartRate, replicaCount)
+	deploymentClient := cgo.InitClientEndpoint(corev1.NamespaceDefault)
+	if dep == nil{
+		return errors.New("error initializing nsc deployment")
+	}
 	deploymentClient.CreateDeployment(dep)
 
-	controller(dep, deploymentClient, podRestartTime, podRestartFreq, restartIterPeriod)
+	svc := busyboxService()
+	if svc == nil{
+		return errors.New("error initializing nsc service")
+	}
+	deploymentClient.CreateService(svc)
+
+
+	log.Println("finished initializing...")
+	return nil
 }
 
 // recreate Busybox deployment (without creating Service again)
-func ReSetup(podRestartTime int, podRestartFreq int, restartIterPeriod int, replicaCount int) {
-	dep := busyboxDeployment(podRestartTime, replicaCount)
-	deploymentClient := kubeapi.InitClientEndpoint(corev1.NamespaceDefault)
+func ReSetup(podRestartRate int, replicaCount int) (*appsv1.Deployment, error) {
+	dep := busyboxDeployment(podRestartRate, replicaCount)
+	if dep == nil{
+		return nil, errors.New("error creating nsc deployment")
+	}
 
-	log.Print("recreate deployment...")
+	deploymentClient := cgo.InitClientEndpoint(corev1.NamespaceDefault)
+
+	log.Println("setup...")
 	deploymentClient.ReCreateNSCDeployment(dep)
-
-	controller(dep, deploymentClient, podRestartTime, podRestartFreq, restartIterPeriod)
-}
-
-// The method contains the logic creating continuously restarting client pods
-// podRestartTime: restart rate (or wait time between restarts)
-// podRestartFreq: restart iteration count
-// restartIterPeriod: restart iteration time period (mutually exclusive from iteration count)
-func controller(dep *appsv1.Deployment, deploymentClient *kubeapi.KubernetesClientEndpoint, podRestartTime int, podRestartFreq int, restartIterPeriod int) {
-	if podRestartFreq != 0 && restartIterPeriod != 0 {
-		deploymentClient.DeleteDeployment(dep)
-		log.Fatal("the iteration period and pod restart count should be mutually exclusive")
-	} else if restartIterPeriod > 0 {
-		log.Printf("iterating for %v seconds...", restartIterPeriod)
-		time.Sleep(time.Second * time.Duration(restartIterPeriod))
-		deploymentClient.ReCreateNSCDeployment(dep)
-	} else if podRestartFreq > 0 {
-		restartCountMode(podRestartFreq, podRestartTime, dep, deploymentClient)
-	}
-}
-
-func restartCountMode(podRestartFreq int, podRestartTime int, dep *appsv1.Deployment, endpoint *kubeapi.KubernetesClientEndpoint) {
-	for i := 1; i <= podRestartFreq; i++ {
-		log.Printf("restart count %v...", i)
-		endpoint.ReCreateNSCDeployment(dep)
-		time.Sleep(time.Second * time.Duration(podRestartTime))
-	}
+	log.Println("finished setup...")
+	return dep, nil
 }
 
 // This is busybox deployment replacing nsc helloworld for testing purposing
-func busyboxDeployment(podRestartTime int, replicaCount int) *appsv1.Deployment {
+func busyboxDeployment(podRestartRate int, replicaCount int) *appsv1.Deployment {
 	val := int32(replicaCount)
-	var replicaCountptr *int32 = &val
-	podRestartTimeStr := strconv.Itoa(podRestartTime)
+	var replicaCountptr = &val
+	podRestartRateStr := strconv.Itoa(podRestartRate)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -112,7 +95,7 @@ func busyboxDeployment(podRestartTime int, replicaCount int) *appsv1.Deployment 
 							Image: imageName,
 							Command: []string{
 								"sleep",
-								podRestartTimeStr,
+								podRestartRateStr,
 							},
 							ImagePullPolicy: corev1.PullIfNotPresent,
 						},

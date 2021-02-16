@@ -1,15 +1,15 @@
 package clientgo
 
 import (
-	"os"
-	"log"
-	"time"
 	"context"
+	"log"
+	"os"
+	"time"
 
-	"path/filepath"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"path/filepath"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -165,10 +165,10 @@ func (kc *KubernetesClientEndpoint) GetPodLogsSinceSeconds(podName string, secon
 }
 
 // Same behavior as: kubectl logs <pod name> --tail=<tails_num>
-func (kc *KubernetesClientEndpoint) GetPodLogsTails(podName string, tails int) *rest.Request {
+func (kc *KubernetesClientEndpoint) GetPodLogsTails(podName string, tails int, containerName string) *rest.Request {
 	tailsInt64 := intToint64ptr(tails)
 	request := kc.ClientSet.CoreV1().Pods(kc.Namespace).GetLogs(podName,
-		&corev1.PodLogOptions{TailLines: tailsInt64})
+		&corev1.PodLogOptions{TailLines: tailsInt64, Container: containerName})
 
 	return request
 }

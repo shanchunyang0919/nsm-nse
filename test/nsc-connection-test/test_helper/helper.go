@@ -1,13 +1,12 @@
 package test_helper
 
 import (
-
+	"bytes"
+	"context"
+	"fmt"
 	"io"
 	"log"
-	"fmt"
-	"bytes"
 	"regexp"
-	"context"
 	"strconv"
 	"strings"
 
@@ -16,8 +15,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 
-	corev1 "k8s.io/api/core/v1"
 	kubeapi "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // A container inside a specific pod.
@@ -41,9 +40,9 @@ func GetLogs(req *rest.Request) string {
 	}
 
 	// defer podLogs.Close()
-	defer func(){
+	defer func() {
 		err = podLogs.Close()
-		if err != nil{
+		if err != nil {
 			log.Fatal(err)
 		}
 	}()
@@ -58,27 +57,6 @@ func GetLogs(req *rest.Request) string {
 	return logs
 }
 
-// Takes a pod name and returns the logs corresponding to the tail numbers, and also return a boolean to
-// validate if the logs match the regex.
-func GetNSELogs(kClient *kubeapi.KubernetesClientEndpoint, podName string, tails int) string {
-	var req *rest.Request
-
-	req = kClient.GetPodLogsTails(podName, tails)
-	//req = kClient.GetPodLogsSinceSeconds(podName, 3600)
-
-	logs := GetLogs(req)
-	return logs
-}
-
-func AssertMatch(logs string, assertMessage string) bool {
-	assertMsg := regexp.MustCompile(assertMessage)
-	matches := assertMsg.FindString(logs)
-	if matches == "" {
-		return false
-	}
-	return true
-}
-
 // Access into specific container inside a pod and execute commands.
 // It returns stdout, stderr, and error.
 func ExecIntoPod(cmd []string, containerName string, podName string, namespace string, stdin io.Reader) (string, string, error) {
@@ -89,7 +67,6 @@ func ExecIntoPod(cmd []string, containerName string, podName string, namespace s
 	if err != nil {
 		log.Fatal(err)
 	}
-
 
 	req := kClient.CoreV1().RESTClient().Post().Resource("pods").Name(podName).
 		Namespace(namespace).SubResource("exec")
@@ -166,7 +143,7 @@ func (c *Container) Ping(destIP string, packetTransmit int) (string, bool) {
 }
 
 // Iterate through lists of containers within a pod and print out its name and restart count.
-func GetContainersRestartCount(pod *corev1.Pod) {
+func DisplayContainersRestartCount(pod corev1.Pod) {
 	for _, containerStatus := range pod.Status.ContainerStatuses {
 		log.Printf("Container Name %v, Restart Count: %v\n",
 			containerStatus.Name, containerStatus.RestartCount)
