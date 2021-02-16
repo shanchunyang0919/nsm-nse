@@ -2,14 +2,16 @@ package clientgo
 
 import (
 	"context"
-	"log"
 	"os"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"path/filepath"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"path/filepath"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -28,7 +30,7 @@ var (
 	nscContainerName = "busybox"
 
 	// wait time for the kubelet to handle deletions/creations of k8s resource (millisecond)
-	waitTimeMs time.Duration = 1000
+	waitTime time.Duration = 1000
 
 	// grace-period time for deletions of k8s resources (shorten the time of pod's TERMINATING state)
 	gracePeriod int64 = 0
@@ -54,7 +56,7 @@ func CreateClientSet(kconfig string) *kubernetes.Clientset {
 	config := GetClientConfig(kconfig)
 	clientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	return clientSet
@@ -67,51 +69,69 @@ func GetKubeConfig() string {
 func GetClientConfig(kconfig string) *rest.Config {
 	config, err := clientcmd.BuildConfigFromFlags(MASTER_URL, kconfig)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	return config
 }
 
-func (kc *KubernetesClientEndpoint) CreateDeployment(dep *appsv1.Deployment) {
+func (kc *KubernetesClientEndpoint) CreateDeployment(dep *appsv1.Deployment) error {
 	_, err := kc.ClientSet.AppsV1().Deployments(kc.Namespace).Create(context.TODO(),
 		dep, metav1.CreateOptions{})
 	if err != nil {
-		log.Fatal(err)
+		return errors.Wrap(err, "error creating deployment")
 	}
+	return nil
 }
 
 // Deletion of Deployment with grace period set
-func (kc *KubernetesClientEndpoint) DeleteDeployment(dep *appsv1.Deployment) {
+func (kc *KubernetesClientEndpoint) DeleteDeployment(dep *appsv1.Deployment) error{
 	err := kc.ClientSet.AppsV1().Deployments(kc.Namespace).Delete(context.TODO(), dep.Name,
 		metav1.DeleteOptions{GracePeriodSeconds: &gracePeriod})
 	if err != nil {
-		log.Fatal(err)
+		return errors.Wrap(err, "error deleting deployment")
 	}
+	return nil
 }
 
 // Completely clean up busybox NSC deployment and NSC pods in zero grace period mode.
 // Making deletion API calls only on development-level will not immediately delete pods.
 // Must also delete pods with zero grace period to reduce the wait time of pods TERMINATING status.
-func (kc *KubernetesClientEndpoint) CleanUpNSCs(dep *appsv1.Deployment) {
-	kc.DeleteDeployment(dep)
-	kc.DeletePodByLabel(nscLabel)
+func (kc *KubernetesClientEndpoint) CleanUpNSCs(dep *appsv1.Deployment) error{
+	err := kc.DeleteDeployment(dep)
+	if err != nil{
+		return err
+	}
+	err = kc.DeletePodByLabel(nscLabel)
+	if err != nil{
+		return err
+	}
+	return nil
 }
 
 // Clean up the NSC deployment and NSC pods with zero grace period and re-deploy the NSC deployment.
 // This method will return after all busybox containers are in READY status.
 // For testing purposes only, must need to set timeout option for it.
-func (kc *KubernetesClientEndpoint) ReCreateNSCDeployment(dep *appsv1.Deployment) {
-	kc.CleanUpNSCs(dep)
-	time.Sleep(time.Millisecond * waitTimeMs)
-	kc.CreateDeployment(dep)
+func (kc *KubernetesClientEndpoint) ReCreateNSCDeployment(dep *appsv1.Deployment) error{
+	err := kc.CleanUpNSCs(dep)
+	if err != nil{
+		return err
+	}
+	time.Sleep(time.Millisecond * waitTime)
+	err = kc.CreateDeployment(dep)
+	if err != nil{
+		return err
+	}
 	// check if all the busybox containers are running
 	for {
 		var hasNotReadyContainer bool
-		podList := kc.GetPodListByLabel(nscLabel)
+		podList, err := kc.GetPodListByLabel(nscLabel)
+		if err != nil{
+			return err
+		}
 		// wait till the pod is created
 		if len(podList.Items) == 0 {
-			time.Sleep(time.Millisecond * waitTimeMs)
+			time.Sleep(time.Millisecond * waitTime)
 			continue
 		}
 		for _, pod := range podList.Items {
@@ -132,27 +152,36 @@ func (kc *KubernetesClientEndpoint) ReCreateNSCDeployment(dep *appsv1.Deployment
 			break
 		}
 		hasNotReadyContainer = true
-		time.Sleep(time.Millisecond * waitTimeMs)
+		time.Sleep(time.Millisecond * waitTime)
 	}
-	log.Print("all nsc containers are ready...")
+	logrus.Print("all nsc containers are ready...")
+	return nil
 }
 
 // Delete selected pods with selected label, the grace period is set to 0 here.
-func (kc *KubernetesClientEndpoint) DeletePodByLabel(label string) {
-	for _, pod := range kc.GetPodListByLabel(label).Items {
-		kc.ClientSet.CoreV1().Pods(kc.Namespace).Delete(context.TODO(), pod.Name,
-			metav1.DeleteOptions{GracePeriodSeconds: &gracePeriod})
+func (kc *KubernetesClientEndpoint) DeletePodByLabel(label string) error{
+	podList, err := kc.GetPodListByLabel(label)
+	if err != nil{
+		return err
 	}
+	for _, pod := range podList.Items {
+		err := kc.ClientSet.CoreV1().Pods(kc.Namespace).Delete(context.TODO(), pod.Name,
+			metav1.DeleteOptions{GracePeriodSeconds: &gracePeriod})
+		if err != nil{
+			return errors.Wrap(err, "error deleting pod by label")
+		}
+	}
+	return nil
 }
 
-func (kc *KubernetesClientEndpoint) GetPodListByLabel(labels string) *corev1.PodList {
+func (kc *KubernetesClientEndpoint) GetPodListByLabel(labels string) (*corev1.PodList, error) {
 	podList, err := kc.ClientSet.CoreV1().Pods(kc.Namespace).List(context.TODO(),
 		metav1.ListOptions{LabelSelector: labels})
 	if err != nil {
-		log.Fatal(err)
+		return nil, errors.Wrap(err, "error get pod list by label")
 	}
 
-	return podList
+	return podList, nil
 }
 
 // Same behavior as: kubectl logs <pod name> --since=<time>
@@ -173,22 +202,24 @@ func (kc *KubernetesClientEndpoint) GetPodLogsTails(podName string, tails int, c
 	return request
 }
 
-func (kc *KubernetesClientEndpoint) GetPodIP(podName string) string {
+func (kc *KubernetesClientEndpoint) GetPodIP(podName string) (string, error) {
 	pod, err := kc.ClientSet.CoreV1().Pods(kc.Namespace).Get(context.TODO(),
 		podName, metav1.GetOptions{})
 	if err != nil {
-		log.Fatal(err)
+		return "", errors.Wrap(err, "error get pod ip address")
 	}
 
-	return pod.Status.PodIP
+	return pod.Status.PodIP, nil
 }
 
-func (kc *KubernetesClientEndpoint) CreateService(service *corev1.Service) {
+func (kc *KubernetesClientEndpoint) CreateService(service *corev1.Service) error{
 	_, err := kc.ClientSet.CoreV1().Services(kc.Namespace).Create(context.TODO(),
 		service, metav1.CreateOptions{})
 	if err != nil {
-		log.Fatal(err)
+		return errors.Wrap(err, "error creating service")
 	}
+
+	return nil
 }
 
 func intToint64ptr(i int) *int64 {

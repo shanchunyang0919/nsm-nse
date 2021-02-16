@@ -25,10 +25,14 @@ Iteration Time Period** is how long the pod is going to live until it gets delet
 
 | ENV VAR | Default       | Description |
 | ---------- |:-------------:| -----:|
-| `LOG`      | `on` | Logs will be printed.|
-| `TIMEMOUT` | `300`      |   Timeout flag for go test. The unit is **second** |
-| `INIT`| `on` | After running the script, could set to **off** to run go test CLI.|
 | `NSE` | `1`| Specify the numbers of NSEs to be deployed.|
+| `INIT`| `on` | After running the script, could set to **off** to run go test CLI.|
+| `LOG`      | `on` | Enable logging mode.|
+| `TIMEMOUT` | `300`      |   Timeout flag for go test. The unit is **second** |
+| `NSE_LOG` | `30` | Prints out recent lines of Network Service Endpoint pod logs.|
+| `NSMGR_LOG` | `30` | Prints out recent lines of Network Service Manager Pod logs.|
+| `PING_LOG` | `on` | Enable to print out logs when NSC pods ping NSE pods.| 
+
 
 
 ####Demo 
@@ -41,6 +45,16 @@ $ ./run_nsc_tests.sh
 $ NSE=<number> ./run_nsc_tests.sh 
 ```
 
+#####Print logs with different options.
+This test will print recent 20 lines of NSE logs, recent 5 lines of NSMGR logs, and no logs from the pinging test.
+```bash
+$ NSE_LOG=20 NSMGR_LOG=5 PING_LOG=off ./run_nsc_tests.sh 
+```
+This will disable the log mode.
+```bash
+$ LOG=off ./run_nsc_tests.sh 
+```
+######
 
 
 ####Extras

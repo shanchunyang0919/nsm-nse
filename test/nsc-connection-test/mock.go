@@ -1,12 +1,12 @@
 package connection
 
 import (
-	"errors"
+	"github.com/sirupsen/logrus"
+	"strconv"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
-	"strconv"
 
 	cgo "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
 )
@@ -23,37 +23,39 @@ var (
 
 // Create Busybox deployment and Service
 func Init(podRestartRate int, replicaCount int) error{
-	log.Println("initializing...")
+	logrus.Println("initializing...")
 	dep := busyboxDeployment(podRestartRate, replicaCount)
 	deploymentClient := cgo.InitClientEndpoint(corev1.NamespaceDefault)
-	if dep == nil{
-		return errors.New("error initializing nsc deployment")
+
+	err := deploymentClient.CreateDeployment(dep)
+	if err != nil{
+		return err
 	}
-	deploymentClient.CreateDeployment(dep)
 
 	svc := busyboxService()
-	if svc == nil{
-		return errors.New("error initializing nsc service")
+
+	err = deploymentClient.CreateService(svc)
+	if err != nil{
+		return err
 	}
-	deploymentClient.CreateService(svc)
 
-
-	log.Println("finished initializing...")
+	logrus.Println("finished initializing...")
 	return nil
 }
 
 // recreate Busybox deployment (without creating Service again)
-func ReSetup(podRestartRate int, replicaCount int) (*appsv1.Deployment, error) {
+func ReSetup(podRestartRate int, replicaCount int) (*appsv1.Deployment, error){
 	dep := busyboxDeployment(podRestartRate, replicaCount)
-	if dep == nil{
-		return nil, errors.New("error creating nsc deployment")
-	}
+
 
 	deploymentClient := cgo.InitClientEndpoint(corev1.NamespaceDefault)
 
-	log.Println("setup...")
-	deploymentClient.ReCreateNSCDeployment(dep)
-	log.Println("finished setup...")
+	logrus.Println("setup...")
+	err := deploymentClient.ReCreateNSCDeployment(dep)
+	if err != nil{
+		return nil, err
+	}
+	logrus.Println("finished setup...")
 	return dep, nil
 }
 
