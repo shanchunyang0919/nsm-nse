@@ -16,9 +16,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 
-	corev1 "k8s.io/api/core/v1"
 	kubeapi "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
-
+	corev1 "k8s.io/api/core/v1"
 )
 
 // A container inside a specific pod.
@@ -35,7 +34,7 @@ var (
 )
 
 // Reads pod logs request and print out the logs with I/O package
-func GetLogs(req *rest.Request) (string, error){
+func GetLogs(req *rest.Request) (string, error) {
 	podLogs, err := req.Stream(context.TODO())
 	if err != nil {
 		return "", errors.Wrap(err, "error steaming")

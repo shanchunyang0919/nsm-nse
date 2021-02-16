@@ -1,23 +1,25 @@
 package connection_test
 
 import (
-	//metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
 	"os"
 	"strconv"
 	"testing"
 	"time"
-	//"context"
+
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+
+	"k8s.io/client-go/rest"
 
 	. "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test"
 	. "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/test_helper"
+	. "github.com/onsi/gomega"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	cgo "github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test/clientgo"
-	appsv1 "k8s.io/api/apps/v1"
 )
 
 const (
@@ -36,8 +38,8 @@ const (
 	nsmNamespace = "nsm-system"
 
 	// containername
-	nscContainerName = "busybox"
-	vl3ContainerName = "vl3-nse"
+	nscContainerName   = "busybox"
+	vl3ContainerName   = "vl3-nse"
 	nsmgrContainerName = "nsmd"
 
 	// connectivity test
@@ -116,7 +118,6 @@ func TestMain(m *testing.M) {
 	}
 }
 
-
 type BounceParameters struct {
 	podRestartRate         int
 	podRestartFrequency    int
@@ -126,9 +127,10 @@ type BounceParameters struct {
 
 // NS connectivity test after the iteration of repeated bring up/down runs.
 func TestConnectivity(t *testing.T) {
+	g := NewWithT(t)
 	if (INIT_MODE) == "on" {
 		err := Init(initPodRestartRate, initReplicaCount)
-		if err != nil{
+		if err != nil {
 			logrus.Fatalf("error initializing: %v", err)
 		}
 	}
@@ -136,7 +138,7 @@ func TestConnectivity(t *testing.T) {
 	defaultClientEndpoint := cgo.InitClientEndpoint(metav1.NamespaceDefault)
 	wcmClientEndpoint := cgo.InitClientEndpoint(wcmNamespace)
 	vl3PodList, err := wcmClientEndpoint.GetPodListByLabel(vl3Label)
-	if err != nil{
+	if err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -146,7 +148,7 @@ func TestConnectivity(t *testing.T) {
 	if NSMGR_LOG > 0 {
 		nsmClientEndpoint = cgo.InitClientEndpoint(nsmNamespace)
 		nsmgrPodList, err = nsmClientEndpoint.GetPodListByLabel(nsmgrLabel)
-		if err != nil{
+		if err != nil {
 			logrus.Fatal(err)
 		}
 	}
@@ -176,26 +178,26 @@ func TestConnectivity(t *testing.T) {
 
 	for _, param := range params {
 		nscDeployment, err := ReSetup(param.podRestartRate, param.replicaCount)
-		logrus.Printf("pod restart rate: %v, pod restart frequency: %v, restart iteration period: %v," +
+		logrus.Printf("pod restart rate: %v, pod restart frequency: %v, restart iteration period: %v,"+
 			"replica count: %v\n", param.podRestartRate, param.podRestartFrequency,
 			param.restartIterationPeriod, param.replicaCount)
-		if err != nil{
+		if err != nil {
 			logrus.Fatal(err)
 		}
 		err = bounce(nscDeployment, defaultClientEndpoint, param.podRestartRate,
 			param.podRestartFrequency, param.restartIterationPeriod)
-		if err != nil{
+		if err != nil {
 			logrus.Fatalf("error bouncing: %v", err)
 		}
 		// loggers
 		if NSE_LOG > 0 {
 			nsePodList, err := wcmClientEndpoint.GetPodListByLabel(vl3Label)
-			if err != nil{
+			if err != nil {
 				logrus.Fatal(err)
 			}
 			for _, nsePod := range nsePodList.Items {
 				err = displayPodLogs(wcmClientEndpoint, nsePod, NSE_LOG, vl3ContainerName)
-				if err != nil{
+				if err != nil {
 					logrus.Warning(err)
 				}
 			}
@@ -203,7 +205,7 @@ func TestConnectivity(t *testing.T) {
 		if nsmgrPodList != nil {
 			for _, nsmgrPod := range nsmgrPodList.Items {
 				err = displayPodLogs(nsmClientEndpoint, nsmgrPod, NSMGR_LOG, nsmgrContainerName)
-				if err != nil{
+				if err != nil {
 					logrus.Warning(err)
 				}
 			}
@@ -219,14 +221,15 @@ func TestConnectivity(t *testing.T) {
 	depForConnTest := struct {
 		podRestartRate int
 		replicaCount   int
-	}{5000, 1}
+	}{5000, 2}
+
 	_, err = ReSetup(depForConnTest.podRestartRate, depForConnTest.replicaCount)
-	if err != nil{
+	if err != nil {
 		logrus.Fatalf("error resetup...: %v", err)
 	}
 
 	nscPodList, err := defaultClientEndpoint.GetPodListByLabel(nscLabel)
-	if err != nil{
+	if err != nil {
 		logrus.Fatal(err)
 	}
 
@@ -240,11 +243,11 @@ func TestConnectivity(t *testing.T) {
 		}
 		for podNum, vl3Pod := range vl3PodList.Items {
 			vl3DestIP, err = wcmClientEndpoint.GetPodIP(vl3Pod.Name)
-			if err != nil{
+			if err != nil {
 				logrus.Fatal(err)
 			}
 			logs, success, err := c.Ping(vl3DestIP, packetTransmit)
-			if err != nil{
+			if err != nil {
 				logrus.Fatal(err)
 			}
 			if PING_LOG == "on" {
@@ -259,21 +262,19 @@ func TestConnectivity(t *testing.T) {
 				break
 			}
 		}
-		if !successfulConnection {
-			logrus.Fatalf("error: pod %v has no successful connections\n", nscPod.Name)
-		}
+		g.Expect(successfulConnection).Should(Equal(true),
+			"pod should have successful connections.")
 	}
-
 }
 
 // The method contains the logic creating continuously restarting client pods
 // podRestartRate: restart rate (or wait time between restarts)
 // podRestartFrequency: restart iteration count
 // restartIterationPeriod: restart iteration time period (mutually exclusive from iteration count)
-func bounce(dep *appsv1.Deployment, endpoint *cgo.KubernetesClientEndpoint, podRestartRate int, podRestartFrequency int, restartIterationPeriod int) error{
+func bounce(dep *appsv1.Deployment, endpoint *cgo.KubernetesClientEndpoint, podRestartRate int, podRestartFrequency int, restartIterationPeriod int) error {
 	if podRestartFrequency != 0 && restartIterationPeriod != 0 {
 		err := endpoint.DeleteDeployment(dep)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 		logrus.Fatal("the iteration period and pod restart count should be mutually exclusive")
@@ -281,23 +282,23 @@ func bounce(dep *appsv1.Deployment, endpoint *cgo.KubernetesClientEndpoint, podR
 		logrus.Printf("iterating for %v seconds...", restartIterationPeriod)
 		time.Sleep(time.Second * time.Duration(restartIterationPeriod))
 		err := endpoint.ReCreateNSCDeployment(dep)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 	} else if podRestartFrequency > 0 {
 		err := restartCountMode(dep, endpoint, podRestartRate, podRestartFrequency)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func restartCountMode( dep *appsv1.Deployment, endpoint *cgo.KubernetesClientEndpoint, podRestartRate int, podRestartFrequency int) error{
+func restartCountMode(dep *appsv1.Deployment, endpoint *cgo.KubernetesClientEndpoint, podRestartRate int, podRestartFrequency int) error {
 	for i := 1; i <= podRestartFrequency; i++ {
 		logrus.Printf("restart count %v...", i)
 		err := endpoint.ReCreateNSCDeployment(dep)
-		if err != nil{
+		if err != nil {
 			return err
 		}
 		time.Sleep(time.Second * time.Duration(podRestartRate))
@@ -306,13 +307,13 @@ func restartCountMode( dep *appsv1.Deployment, endpoint *cgo.KubernetesClientEnd
 }
 
 // Display pod logs and container counts
-func displayPodLogs(kC *cgo.KubernetesClientEndpoint, pod corev1.Pod, tails int, containerName string) error{
+func displayPodLogs(kC *cgo.KubernetesClientEndpoint, pod corev1.Pod, tails int, containerName string) error {
 	logrus.Println("display logs for pod", pod.Name)
 	var req *rest.Request
 	req = kC.GetPodLogsTails(pod.Name, tails, containerName)
 	logs, err := GetLogs(req)
-	if err != nil{
-		return err
+	if err != nil {
+		return errors.Wrap(err, "fail to display pod logs")
 	}
 	logrus.Print(logs)
 	DisplayContainersRestartCount(pod)

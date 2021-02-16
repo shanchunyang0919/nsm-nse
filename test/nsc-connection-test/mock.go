@@ -22,40 +22,41 @@ var (
 )
 
 // Create Busybox deployment and Service
-func Init(podRestartRate int, replicaCount int) error{
+func Init(podRestartRate int, replicaCount int) error {
 	logrus.Println("initializing...")
 	dep := busyboxDeployment(podRestartRate, replicaCount)
 	deploymentClient := cgo.InitClientEndpoint(corev1.NamespaceDefault)
 
 	err := deploymentClient.CreateDeployment(dep)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
 	svc := busyboxService()
-
 	err = deploymentClient.CreateService(svc)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
 	logrus.Println("finished initializing...")
+
 	return nil
 }
 
 // recreate Busybox deployment (without creating Service again)
-func ReSetup(podRestartRate int, replicaCount int) (*appsv1.Deployment, error){
+func ReSetup(podRestartRate int, replicaCount int) (*appsv1.Deployment, error) {
 	dep := busyboxDeployment(podRestartRate, replicaCount)
-
-
 	deploymentClient := cgo.InitClientEndpoint(corev1.NamespaceDefault)
 
 	logrus.Println("setup...")
+
 	err := deploymentClient.ReCreateNSCDeployment(dep)
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
+
 	logrus.Println("finished setup...")
+
 	return dep, nil
 }
 
