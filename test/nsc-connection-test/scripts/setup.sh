@@ -52,10 +52,3 @@ echo "---------------------"
 
 INIT=${INIT} TIMEOUT=${TIMEOUT} LOG=${LOG} NSMGR_LOG=${NSMGR_LOG} PING_LOG=${PING_LOG} NSE_LOG=${NSE_LOG:-on} go test
 
-echo
-echo "CLEAN UP"
-echo "---------------------"
-
-kind delete cluster --name ${MANIFEST}
-
-#rm ${TESTDIR}/${KCONFIG}

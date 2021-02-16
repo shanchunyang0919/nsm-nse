@@ -65,6 +65,18 @@ func setEnvironmentVariables() error {
 		return errors.Wrap(err, "error setting TIMEOUT")
 	}
 
+	logrus.Println("INIT MODE:", INIT_MODE)
+	logrus.Println("TIMEOUT:", TIMEOUT)
+	// turn off log mode
+	LOG = os.Getenv("LOG")
+	if LOG == "off" {
+		NSE_LOG = 0
+		NSMGR_LOG = 0
+		PING_LOG = "off"
+		logrus.Println("LOG:", LOG)
+		return nil
+	}
+
 	NSE_LOG, err = strconv.Atoi(os.Getenv("NSE_LOG"))
 	if err != nil || NSE_LOG < 0 {
 		return errors.Wrap(err, "error setting NSE_LOG")
@@ -76,19 +88,6 @@ func setEnvironmentVariables() error {
 	}
 
 	PING_LOG = os.Getenv("PING_LOG")
-
-	logrus.Println("INIT MODE:", INIT_MODE)
-	logrus.Println("TIMEOUT:", TIMEOUT)
-
-	// turn off log mode
-	LOG = os.Getenv("LOG")
-	if LOG == "off" {
-		NSE_LOG = 0
-		NSMGR_LOG = 0
-		PING_LOG = "off"
-		logrus.Println("LOG:", LOG)
-		return nil
-	}
 
 	logrus.Println("NSE_LOG:", NSE_LOG)
 	logrus.Println("NSMGR_LOG:", NSMGR_LOG)

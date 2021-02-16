@@ -35,38 +35,40 @@ Iteration Time Period** is how long the pod is going to live until it gets delet
 
 
 
-####Demo 
+####Demo
+This will setup the environment, run tests, and clean up. 
 ```bash
-$ ./run_nsc_tests.sh 
+$ make run-all 
 ```
 
-#####Run tests with multiple NSEs 
+#####Multiple NSEs setup
+Specify the numbers of NSEs set up the environment.  
 ```bash
-$ NSE=<number> ./run_nsc_tests.sh 
+$ make NSE=<number> setup 
 ```
 
-#####Print logs with different options.
+#####Print logs with different options. (After setup)
 This test will print recent 20 lines of NSE logs, recent 5 lines of NSMGR logs, and no logs from the pinging test.
 ```bash
-$ NSE_LOG=20 NSMGR_LOG=5 PING_LOG=off ./run_nsc_tests.sh 
+$ make NSE_LOG=20 NSMGR_LOG=5 PING_LOG=off run-test
 ```
 This will disable the log mode.
 ```bash
-$ LOG=off ./run_nsc_tests.sh 
+$ make LOG=off run-test
 ```
 ######
 
 
 ####Extras
 
-**Connectivty test only (need to run script first)**
+**Run test with specific environment variables (Manual)**
 ```bash 
-$ INIT=off LOG=on TIMEOUT=300 go test --short
+$ INIT=off LOG=on TIMEOUT=300 NSE_LOG=20 NSMGR_LOG=5 PING_LOG=off go test
 ```
 
 **Clean up (Manual)**
 ```bash
-$ kind delete cluster --name <cluster_name>
+$ kind delete cluster --name kind-1-demo
 ```
 
 ##Reference
