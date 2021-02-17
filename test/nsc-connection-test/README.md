@@ -56,6 +56,10 @@ This will disable the log mode.
 ```bash
 $ make LOG=off run-test
 ```
+Clean up kind cluster
+```bash
+$ make clean
+```
 ######
 
 

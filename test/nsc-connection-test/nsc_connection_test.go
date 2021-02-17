@@ -233,7 +233,7 @@ func TestConnectivity(t *testing.T) {
 
 	_, err = ReSetup(depForConnTest.podRestartRate, depForConnTest.replicaCount)
 	if err != nil {
-		logrus.Fatalf(err)
+		logrus.Fatal(err)
 	}
 
 	nscPodList, err := defaultClientEndpoint.GetPodListByLabel(nscLabel)
@@ -322,7 +322,6 @@ func displayPodLogs(kC *cgo.KubernetesClientEndpoint, pod corev1.Pod, tails int,
 		return errors.Wrap(err, "fail to display pod logs")
 	}
 	logrus.Print(logs)
-	DisplayContainersRestartCount(pod)
 
 	return nil
 }

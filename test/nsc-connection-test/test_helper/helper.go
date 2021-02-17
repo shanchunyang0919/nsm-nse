@@ -142,10 +142,3 @@ func (c *Container) Ping(destIP string, packetTransmit int) (string, bool, error
 	return stdout, true, nil
 }
 
-// Iterate through lists of containers within a pod and print out its name and restart count.
-func DisplayContainersRestartCount(pod corev1.Pod) {
-	for _, containerStatus := range pod.Status.ContainerStatuses {
-		logrus.Printf("Container Name %v, Restart Count: %v\n",
-			containerStatus.Name, containerStatus.RestartCount)
-	}
-}

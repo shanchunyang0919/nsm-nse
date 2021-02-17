@@ -1,8 +1,10 @@
 package connection
 
 import (
-	"github.com/sirupsen/logrus"
 	"strconv"
+
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -27,15 +29,19 @@ func Init(podRestartRate int, replicaCount int) error {
 	dep := busyboxDeployment(podRestartRate, replicaCount)
 	deploymentClient := cgo.InitClientEndpoint(corev1.NamespaceDefault)
 
-	err := deploymentClient.CreateDeployment(dep)
-	if err != nil {
-		return err
+	derr := deploymentClient.CreateDeployment(dep)
+	if derr != nil{
+		logrus.Warning(derr)
 	}
 
 	svc := busyboxService()
-	err = deploymentClient.CreateService(svc)
-	if err != nil {
-		return err
+	serr := deploymentClient.CreateService(svc)
+	if serr != nil{
+		logrus.Warning(serr)
+	}
+
+	if serr != nil && derr != nil{
+		return errors.New("cannot create service and deployment")
 	}
 
 	logrus.Println("finished initializing...")
@@ -62,8 +68,6 @@ func ReSetup(podRestartRate int, replicaCount int) (*appsv1.Deployment, error) {
 
 // This is busybox deployment replacing nsc helloworld for testing purposing
 func busyboxDeployment(podRestartRate int, replicaCount int) *appsv1.Deployment {
-	val := int32(replicaCount)
-	var replicaCountptr = &val
 	podRestartRateStr := strconv.Itoa(podRestartRate)
 
 	return &appsv1.Deployment{
@@ -77,7 +81,7 @@ func busyboxDeployment(podRestartRate int, replicaCount int) *appsv1.Deployment 
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: replicaCountptr,
+			Replicas: intToint32ptr(replicaCount),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app":     "busybox-" + serviceName,
@@ -131,4 +135,10 @@ func busyboxService() *corev1.Service {
 			},
 		},
 	}
+}
+
+func intToint32ptr(i int) *int32 {
+	val := int32(i)
+
+	return &val
 }
