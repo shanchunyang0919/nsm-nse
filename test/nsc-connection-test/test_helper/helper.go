@@ -131,7 +131,7 @@ func (c *Container) Ping(destIP string, packetTransmit int) (string, bool, error
 	args := strings.Split(strings.Split(matches, ",")[2], "%")
 	packetLossPercentage, errAtoi := strconv.Atoi(strings.TrimPrefix(args[0], " "))
 	if errAtoi != nil {
-		logrus.Fatal(errAtoi)
+		return "", false, errAtoi
 	}
 
 	if packetLossPercentage != 0 {

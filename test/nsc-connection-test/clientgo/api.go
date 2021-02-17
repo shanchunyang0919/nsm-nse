@@ -135,6 +135,10 @@ func (kc *KubernetesClientEndpoint) ReCreateNSCDeployment(dep *appsv1.Deployment
 			continue
 		}
 		for _, pod := range podList.Items {
+			if len(pod.Status.ContainerStatuses) < 3{
+				return errors.New(pod.Name + " has incorrect number of containers..." )
+			}
+
 			for _, containerStatus := range pod.Status.ContainerStatuses {
 				if containerStatus.Name != nscContainerName {
 					continue
@@ -164,12 +168,46 @@ func (kc *KubernetesClientEndpoint) DeletePodByLabel(label string) error {
 	if err != nil {
 		return err
 	}
+
+	watch, err := kc.ClientSet.CoreV1().Pods(kc.Namespace).Watch(context.TODO(),
+		metav1.ListOptions{LabelSelector: label})
+	if err != nil{
+		return err
+	}
+
+	// watch a pod until it is deleted
 	for _, pod := range podList.Items {
-		err := kc.ClientSet.CoreV1().Pods(kc.Namespace).Delete(context.TODO(), pod.Name,
+		logrus.Printf("watching %v...\n", pod.Name)
+
+		deleted := make(chan bool)
+		go func(podName string){
+			for event := range watch.ResultChan(){
+				if event.Type == "DELETED"{
+					deletedPod, ok := event.Object.(*corev1.Pod)
+					if !ok{
+						logrus.Fatal("unexpected type")
+					}
+					if podName == deletedPod.Name{
+						deleted <- true
+					}
+				}
+			}
+		}(pod.Name)
+
+		err = kc.ClientSet.CoreV1().Pods(kc.Namespace).Delete(context.TODO(), pod.Name,
 			metav1.DeleteOptions{GracePeriodSeconds: &gracePeriod})
 		if err != nil {
 			return errors.Wrap(err, "error deleting pod by label")
 		}
+
+		ForLoop:
+			for{
+				select{
+				case <-deleted:
+					logrus.Println(pod.Name,"is deleted")
+					break ForLoop
+				}
+			}
 	}
 	return nil
 }
