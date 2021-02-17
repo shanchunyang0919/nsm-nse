@@ -233,7 +233,7 @@ func TestConnectivity(t *testing.T) {
 
 	_, err = ReSetup(depForConnTest.podRestartRate, depForConnTest.replicaCount)
 	if err != nil {
-		logrus.Fatalf("error resetup...: %v", err)
+		logrus.Fatalf(err)
 	}
 
 	nscPodList, err := defaultClientEndpoint.GetPodListByLabel(nscLabel)
