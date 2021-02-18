@@ -137,9 +137,9 @@ func (kc *KubernetesClientEndpoint) ReCreateNSCDeployment(dep *appsv1.Deployment
 			continue
 		}
 		for _, pod := range podList.Items {
-			if len(pod.Status.ContainerStatuses) <= nscContainersCount{
+			if len(pod.Status.ContainerStatuses) <= nscContainersCount {
 				// unexpected admission error
-				return errors.New(pod.Name + " has incorrect number of containers..." )
+				return errors.New(pod.Name + " has incorrect number of containers...")
 			}
 
 			for _, containerStatus := range pod.Status.ContainerStatuses {
@@ -174,7 +174,7 @@ func (kc *KubernetesClientEndpoint) DeletePodByLabel(label string) error {
 
 	watch, err := kc.ClientSet.CoreV1().Pods(kc.Namespace).Watch(context.TODO(),
 		metav1.ListOptions{LabelSelector: label})
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
@@ -183,14 +183,14 @@ func (kc *KubernetesClientEndpoint) DeletePodByLabel(label string) error {
 		logrus.Printf("watching %v...\n", pod.Name)
 
 		deleted := make(chan bool)
-		go func(podName string){
-			for event := range watch.ResultChan(){
-				if event.Type == "DELETED"{
+		go func(podName string) {
+			for event := range watch.ResultChan() {
+				if event.Type == "DELETED" {
 					deletedPod, ok := event.Object.(*corev1.Pod)
-					if !ok{
+					if !ok {
 						logrus.Fatal("unexpected type")
 					}
-					if podName == deletedPod.Name{
+					if podName == deletedPod.Name {
 						deleted <- true
 					}
 				}
@@ -203,14 +203,14 @@ func (kc *KubernetesClientEndpoint) DeletePodByLabel(label string) error {
 			return errors.Wrap(err, "error deleting pod by label")
 		}
 
-		ForLoop:
-			for{
-				select{
-				case <-deleted:
-					logrus.Println(pod.Name,"is deleted")
-					break ForLoop
-				}
+	ForLoop:
+		for {
+			select {
+			case <-deleted:
+				logrus.Println(pod.Name, "is deleted")
+				break ForLoop
 			}
+		}
 	}
 	return nil
 }
@@ -225,15 +225,6 @@ func (kc *KubernetesClientEndpoint) GetPodListByLabel(labels string) (*corev1.Po
 	return podList, nil
 }
 
-// Same behavior as: kubectl logs <pod name> --since=<time>
-func (kc *KubernetesClientEndpoint) GetPodLogsSinceSeconds(podName string, seconds int) *rest.Request {
-	secondsInt64 := intToint64ptr(seconds)
-	request := kc.ClientSet.CoreV1().Pods(kc.Namespace).GetLogs(podName,
-		&corev1.PodLogOptions{SinceSeconds: secondsInt64})
-
-	return request
-}
-
 // Same behavior as: kubectl logs <pod name> --tail=<tails_num>
 func (kc *KubernetesClientEndpoint) GetPodLogsTails(podName string, tails int, containerName string) *rest.Request {
 	tailsInt64 := intToint64ptr(tails)
@@ -242,7 +233,6 @@ func (kc *KubernetesClientEndpoint) GetPodLogsTails(podName string, tails int, c
 
 	return request
 }
-
 
 func (kc *KubernetesClientEndpoint) CreateService(service *corev1.Service) error {
 	_, err := kc.ClientSet.CoreV1().Services(kc.Namespace).Create(context.TODO(),
@@ -259,4 +249,5 @@ func intToint64ptr(i int) *int64 {
 
 	return &val
 }
+
 

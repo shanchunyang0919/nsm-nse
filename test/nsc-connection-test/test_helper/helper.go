@@ -31,9 +31,10 @@ type Container struct {
 var (
 	// This regex match ping statistics - X packets transmitted, X packets received, X% packet loss
 	PingRegex = regexp.MustCompile("\n([0-9]+) packets transmitted, ([0-9]+) packets received, ([0-9]+)% packet loss")
+	ipAddressRegex = regexp.MustCompile(`\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b`)
 
 	packetLossTolerance = 50
-	)
+)
 
 // Reads pod logs request and print out the logs with I/O package
 func GetLogs(req *rest.Request) (string, error) {
@@ -108,12 +109,11 @@ func ExecIntoPod(cmd []string, containerName string, podName string, namespace s
 	return stdout.String(), stderr.String(), nil
 }
 
-
-func (c *Container) GetNSEInterfaceIP() (string, error){
+// This method exec into NSC pod and get its nsm0 IP and add 1 to it. It returns the modified IP address as
+// the corresponding NSE memif IP address
+func (c *Container) GetNSEInterfaceIP() (string, error) {
 	getIPCmd := "ip a show dev nsm0"
 	cmd := []string{"sh", "-c", getIPCmd}
-
-	m := regexp.MustCompile(`\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b`)
 
 	exec, stderr, err := ExecIntoPod(cmd, c.ContainerName, c.PodName, c.Namespace, nil)
 	if len(stderr) != 0 {
@@ -123,20 +123,20 @@ func (c *Container) GetNSEInterfaceIP() (string, error){
 		return "", err
 	}
 
-	nsmIP := strings.Split(m.FindString(exec), ".")
+	nsmIP := strings.Split(ipAddressRegex.FindString(exec), ".")
 
 	lastByte, err := strconv.Atoi(nsmIP[3])
-	if err != nil{
+	if err != nil {
 		return "", err
 	}
 
-	if lastByte == 255{
+	if lastByte == 255 {
 		return "", errors.New("last byte ip address is 255")
-	}else{
+	} else {
 		lastByte++
 	}
 
-	vl3IPSlice:= append(nsmIP[0:3], strconv.Itoa(lastByte))
+	vl3IPSlice := append(nsmIP[0:3], strconv.Itoa(lastByte))
 	vl3IP := strings.Join(vl3IPSlice, ".")
 
 	return vl3IP, nil

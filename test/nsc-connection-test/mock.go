@@ -30,17 +30,17 @@ func Init(podRestartRate int, replicaCount int) error {
 	deploymentClient := cgo.InitClientEndpoint(corev1.NamespaceDefault)
 
 	derr := deploymentClient.CreateDeployment(dep)
-	if derr != nil{
+	if derr != nil {
 		logrus.Warning(derr)
 	}
 
 	svc := busyboxService()
 	serr := deploymentClient.CreateService(svc)
-	if serr != nil{
+	if serr != nil {
 		logrus.Warning(serr)
 	}
 
-	if serr != nil && derr != nil{
+	if serr != nil && derr != nil {
 		return errors.New("cannot create service and deployment")
 	}
 
@@ -142,4 +142,5 @@ func intToint32ptr(i int) *int32 {
 
 	return &val
 }
+
 

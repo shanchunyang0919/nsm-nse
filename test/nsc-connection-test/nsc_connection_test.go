@@ -210,14 +210,15 @@ func TestConnectivity(t *testing.T) {
 		}
 	}
 
-	logrus.Print("----- Connectivity Tests -----")
+	logrus.Print("----- Connectivity Test -----")
 
-	depForConnTest := struct {
+	// deploy long live pods for connectivity tests
+	depForConnectivityTest := struct {
 		podRestartRate int
 		replicaCount   int
 	}{5000, 2}
 
-	_, err = ReSetup(depForConnTest.podRestartRate, depForConnTest.replicaCount)
+	_, err = ReSetup(depForConnectivityTest.podRestartRate, depForConnectivityTest.replicaCount)
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -227,7 +228,7 @@ func TestConnectivity(t *testing.T) {
 		t.Error(err)
 	}
 
-	// iterate through every NSC containers to ping all NSEs
+	// iterate through every NSC containers to ping all NSE's memif IP address
 	var c *Container
 
 	for testNum, nscPod := range nscPodList.Items {
@@ -237,17 +238,17 @@ func TestConnectivity(t *testing.T) {
 			Namespace:     nscNamespace,
 		}
 		vl3DestIP, err := c.GetNSEInterfaceIP()
-		if err != nil{
+		if err != nil {
 			t.Error(err)
 		}
-		logrus.Println("nse ip address " + vl3DestIP)
+		logrus.Println("nse memif ip address " + vl3DestIP)
 
 		logs, success, err := c.Ping(vl3DestIP, packetTransmit)
 		if err != nil {
 			t.Error(err)
 		}
 		if PING_LOG == "on" {
-			logrus.Printf("pod: %v, %v\n", testNum + 1, c.PodName)
+			logrus.Printf("pod: %v, %v\n", testNum+1, c.PodName)
 			logrus.Printf("ping from container \"%s\" to address %s\n",
 				c.ContainerName, vl3DestIP)
 			logrus.Println(logs)
@@ -307,3 +308,4 @@ func displayPodLogs(kC *cgo.KubernetesClientEndpoint, pod corev1.Pod, tails int,
 
 	return nil
 }
+
