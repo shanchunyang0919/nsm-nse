@@ -131,7 +131,7 @@ func (c *Container) GetNSEInterfaceIP() (string, error){
 	}
 
 	if lastByte == 255{
-		return "", errors.New("last byte ip address is 255 ")
+		return "", errors.New("last byte ip address is 255")
 	}else{
 		lastByte++
 	}
