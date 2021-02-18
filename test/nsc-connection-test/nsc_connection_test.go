@@ -159,24 +159,24 @@ func TestConnectivity(t *testing.T) {
 			restartIterationPeriod: 0,
 			replicaCount:           1,
 		},
-		//{
-		//	podRestartRate:         20,
-		//	podRestartFrequency:    0,
-		//	restartIterationPeriod: 10,
-		//	replicaCount:           1,
-		//},
-		//{
-		//	podRestartRate:         5,
-		//	podRestartFrequency:    3,
-		//	restartIterationPeriod: 0,
-		//	replicaCount:           1,
-		//},
-		//{
-		//	podRestartRate:         2,
-		//	podRestartFrequency:    0,
-		//	restartIterationPeriod: 0,
-		//	replicaCount:           1,
-		//},
+		{
+			podRestartRate:         20,
+			podRestartFrequency:    0,
+			restartIterationPeriod: 10,
+			replicaCount:           1,
+		},
+		{
+			podRestartRate:         5,
+			podRestartFrequency:    3,
+			restartIterationPeriod: 0,
+			replicaCount:           1,
+		},
+		{
+			podRestartRate:         2,
+			podRestartFrequency:    0,
+			restartIterationPeriod: 0,
+			replicaCount:           1,
+		},
 	}
 
 	for _, param := range params {

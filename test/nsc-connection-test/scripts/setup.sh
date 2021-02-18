@@ -4,7 +4,7 @@ set -euo pipefail
 NSE=${NSE:-1}
 MANIFEST=${MANIFEST:-kind-1-demo}
 KCONFIG=${KCONFIG:-cluster1-demo}
-IPAM=${IPAM:-172.100.0.0/16}
+IPAM=${IPAM:-127.0.0.1/16}
 TESTDIR=${TESTDIR:-${GOPATH}/src/github.com/cisco-app-networking/nsm-nse/test/nsc-connection-test}
 
 echo "NSEs: ${NSE}"
