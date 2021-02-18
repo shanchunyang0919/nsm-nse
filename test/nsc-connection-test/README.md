@@ -31,6 +31,10 @@ Iteration Time Period** is how long the pod is going to live until it gets delet
 | `NSMGR_LOG` | `30` | Prints out recent lines of Network Service Manager Pod logs.|
 | `PING_LOG` | `on` | Enable to print out logs when NSC pods ping NSE pods.| 
 
+### Connectivity Test
+Perform a ping command from NSC busybox container to the IP address if NSE `memif` interface. For example, according 
+to the graph below, we will `exec` into the NSC pod container and execute `ping 192.168.22.2` command.
+<img width="1870" alt="Screen Shot 2021-02-18 at 7 13 47 AM" src="https://user-images.githubusercontent.com/71080192/108377543-01eb0500-71b9-11eb-9f84-61826c42d5f4.png">
 
 
 #### Demo
