@@ -43,7 +43,7 @@ const (
 	nsmgrContainerName = "nsmd"
 
 	// connectivity test
-	packetTransmit = 1
+	packetTransmit = 5
 )
 
 var (
@@ -138,14 +138,10 @@ func TestConnectivity(t *testing.T) {
 	defaultClientEndpoint := cgo.InitClientEndpoint(metav1.NamespaceDefault)
 	wcmClientEndpoint := cgo.InitClientEndpoint(wcmNamespace)
 
-	vl3PodList, err := wcmClientEndpoint.GetPodListByLabel(vl3Label)
-	if err != nil {
-		t.Error(err)
-	}
-
 	// get list of nsmgr
 	var nsmgrPodList *corev1.PodList
 	var nsmClientEndpoint *cgo.KubernetesClientEndpoint
+	var err error
 	if NSMGR_LOG > 0 {
 		nsmClientEndpoint = cgo.InitClientEndpoint(nsmNamespace)
 		nsmgrPodList, err = nsmClientEndpoint.GetPodListByLabel(nsmgrLabel)
@@ -163,24 +159,24 @@ func TestConnectivity(t *testing.T) {
 			restartIterationPeriod: 0,
 			replicaCount:           1,
 		},
-		{
-			podRestartRate:         20,
-			podRestartFrequency:    0,
-			restartIterationPeriod: 10,
-			replicaCount:           1,
-		},
-		{
-			podRestartRate:         5,
-			podRestartFrequency:    3,
-			restartIterationPeriod: 0,
-			replicaCount:           1,
-		},
-		{
-			podRestartRate:         2,
-			podRestartFrequency:    0,
-			restartIterationPeriod: 0,
-			replicaCount:           1,
-		},
+		//{
+		//	podRestartRate:         20,
+		//	podRestartFrequency:    0,
+		//	restartIterationPeriod: 10,
+		//	replicaCount:           1,
+		//},
+		//{
+		//	podRestartRate:         5,
+		//	podRestartFrequency:    3,
+		//	restartIterationPeriod: 0,
+		//	replicaCount:           1,
+		//},
+		//{
+		//	podRestartRate:         2,
+		//	podRestartFrequency:    0,
+		//	restartIterationPeriod: 0,
+		//	replicaCount:           1,
+		//},
 	}
 
 	for _, param := range params {
@@ -222,10 +218,6 @@ func TestConnectivity(t *testing.T) {
 
 	logrus.Print("----- Connectivity Tests -----")
 
-	var c *Container
-	var vl3DestIP string
-	var successfulConnection bool
-
 	depForConnTest := struct {
 		podRestartRate int
 		replicaCount   int
@@ -242,35 +234,31 @@ func TestConnectivity(t *testing.T) {
 	}
 
 	// iterate through every NSC containers to ping all NSEs
-	for _, nscPod := range nscPodList.Items {
-		successfulConnection = false
+	var c *Container
+
+	for testNum, nscPod := range nscPodList.Items {
 		c = &Container{
 			ContainerName: nscContainerName,
 			PodName:       nscPod.Name,
 			Namespace:     nscNamespace,
 		}
-		for podNum, vl3Pod := range vl3PodList.Items {
-			vl3DestIP, err = wcmClientEndpoint.GetPodIP(vl3Pod.Name)
-			if err != nil {
-				t.Error(err)
-			}
-			logs, success, err := c.Ping(vl3DestIP, packetTransmit)
-			if err != nil {
-				t.Error(err)
-			}
-			if PING_LOG == "on" {
-				logrus.Printf("Pod: %v, %v\n", podNum+1, c.PodName)
-				logrus.Printf("Ping from container \"%s\" to address %s\n",
-					c.ContainerName, vl3DestIP)
-				logrus.Println(logs)
-			}
-			if success {
-				// at least one vl3 NSE is connected to NSC
-				successfulConnection = true
-				break
-			}
+		vl3DestIP, err := c.GetNSEInterfaceIP()
+		if err != nil{
+			t.Error(err)
 		}
-		g.Expect(successfulConnection).Should(Equal(true),
+		logrus.Println("nse ip address " + vl3DestIP)
+
+		logs, success, err := c.Ping(vl3DestIP, packetTransmit)
+		if err != nil {
+			t.Error(err)
+		}
+		if PING_LOG == "on" {
+			logrus.Printf("pod: %v, %v\n", testNum + 1, c.PodName)
+			logrus.Printf("ping from container \"%s\" to address %s\n",
+				c.ContainerName, vl3DestIP)
+			logrus.Println(logs)
+		}
+		g.Expect(success).Should(Equal(true),
 			"pod should have successful connections.")
 	}
 }

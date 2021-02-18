@@ -31,7 +31,9 @@ type Container struct {
 var (
 	// This regex match ping statistics - X packets transmitted, X packets received, X% packet loss
 	PingRegex = regexp.MustCompile("\n([0-9]+) packets transmitted, ([0-9]+) packets received, ([0-9]+)% packet loss")
-)
+
+	packetLossTolerance = 50
+	)
 
 // Reads pod logs request and print out the logs with I/O package
 func GetLogs(req *rest.Request) (string, error) {
@@ -106,7 +108,41 @@ func ExecIntoPod(cmd []string, containerName string, podName string, namespace s
 	return stdout.String(), stderr.String(), nil
 }
 
-// Perform linux Ping command with destination IP address. This method returns stream output and
+
+func (c *Container) GetNSEInterfaceIP() (string, error){
+	getIPCmd := "ip a show dev nsm0"
+	cmd := []string{"sh", "-c", getIPCmd}
+
+	m := regexp.MustCompile(`\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b`)
+
+	exec, stderr, err := ExecIntoPod(cmd, c.ContainerName, c.PodName, c.Namespace, nil)
+	if len(stderr) != 0 {
+		return "", errors.New("std getting nsm ip address")
+	}
+	if err != nil {
+		return "", err
+	}
+
+	nsmIP := strings.Split(m.FindString(exec), ".")
+
+	lastByte, err := strconv.Atoi(nsmIP[3])
+	if err != nil{
+		return "", err
+	}
+
+	if lastByte == 255{
+		return "", errors.New("last byte ip address is 255 ")
+	}else{
+		lastByte++
+	}
+
+	vl3IPSlice:= append(nsmIP[0:3], strconv.Itoa(lastByte))
+	vl3IP := strings.Join(vl3IPSlice, ".")
+
+	return vl3IP, nil
+}
+
+// Perform linux Ping command to destination IP address. This method returns stream output and
 // boolean which determines if the output matches regex.
 func (c *Container) Ping(destIP string, packetTransmit int) (string, bool, error) {
 	pingCmd := "ping -c " + strconv.Itoa(packetTransmit) + " " + destIP
@@ -134,8 +170,8 @@ func (c *Container) Ping(destIP string, packetTransmit int) (string, bool, error
 		return "", false, errAtoi
 	}
 
-	if packetLossPercentage != 0 {
-		logrus.Print("packet loss is not 0%")
+	if packetLossPercentage > packetLossTolerance {
+		logrus.Printf("packet loss is greater than %v %\n", packetLossTolerance)
 		return "", false, nil
 	}
 

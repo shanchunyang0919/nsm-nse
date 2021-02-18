@@ -242,15 +242,6 @@ func (kc *KubernetesClientEndpoint) GetPodLogsTails(podName string, tails int, c
 	return request
 }
 
-func (kc *KubernetesClientEndpoint) GetPodIP(podName string) (string, error) {
-	pod, err := kc.ClientSet.CoreV1().Pods(kc.Namespace).Get(context.TODO(),
-		podName, metav1.GetOptions{})
-	if err != nil {
-		return "", errors.Wrap(err, "error getting pod ip address")
-	}
-
-	return pod.Status.PodIP, nil
-}
 
 func (kc *KubernetesClientEndpoint) CreateService(service *corev1.Service) error {
 	_, err := kc.ClientSet.CoreV1().Services(kc.Namespace).Create(context.TODO(),
