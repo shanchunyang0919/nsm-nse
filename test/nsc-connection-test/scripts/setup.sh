@@ -35,19 +35,3 @@ echo "---------------------"
 
 REMOTE_IP=${IPAM} KCONF=${KUBEPATH} PULLPOLICY=Always NSEREPLICAS=${NSE} scripts/vl3/vl3_interdomain.sh
 
-cd ${TESTDIR}
-
-# Enviroment varibles for go test
-#INIT=${INIT:-on}
-#TIMEOUT=${TIMEOUT:-300}
-#NSE_LOG=${NSE_LOG:-30}
-#NSMGR_LOG=${NSMGR_LOG:-30}
-#PING_LOG=${PING_LOG:-on}
-#LOG=${LOG:-on}
-#
-#echo
-#echo "NSC CONNECTION TEST START"
-#echo "---------------------"
-#
-#INIT=${INIT} TIMEOUT=${TIMEOUT} LOG=${LOG} NSMGR_LOG=${NSMGR_LOG} PING_LOG=${PING_LOG} NSE_LOG=${NSE_LOG:-on} go test
-#

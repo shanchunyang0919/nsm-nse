@@ -171,12 +171,6 @@ func TestConnectivity(t *testing.T) {
 			restartIterationPeriod: 0,
 			replicaCount:           1,
 		},
-		{
-			podRestartRate:         2,
-			podRestartFrequency:    0,
-			restartIterationPeriod: 0,
-			replicaCount:           1,
-		},
 	}
 
 	for _, param := range params {
@@ -184,7 +178,7 @@ func TestConnectivity(t *testing.T) {
 		if err != nil {
 			logrus.Fatal(err)
 		}
-		logrus.Printf("pod restart rate: %v, pod restart frequency: %v, restart iteration period: %v,"+
+		logrus.Printf("pod restart rate: %v, pod restart frequency: %v, restart iteration period: %v, "+
 			"replica count: %v\n", param.podRestartRate, param.podRestartFrequency,
 			param.restartIterationPeriod, param.replicaCount)
 

@@ -10,4 +10,5 @@ echo "CLEAN UP"
 echo "---------------------"
 
 kind delete cluster --name ${MANIFEST}
-#rm ${MANIFESTDIR}/${KCONFIG}
+rm ${MANIFESTDIR}/${KCONFIG}
+

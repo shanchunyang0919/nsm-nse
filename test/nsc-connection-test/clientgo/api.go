@@ -113,7 +113,7 @@ func (kc *KubernetesClientEndpoint) CleanUpNSCs(dep *appsv1.Deployment) error {
 // This method will return after all busybox containers are in READY status.
 // For testing purposes only, must need to set timeout option for it.
 func (kc *KubernetesClientEndpoint) ReCreateNSCDeployment(dep *appsv1.Deployment) error {
-	nscContainersCount := 3
+	nscContainersCount := 1
 
 	err := kc.CleanUpNSCs(dep)
 	if err != nil {
@@ -137,7 +137,8 @@ func (kc *KubernetesClientEndpoint) ReCreateNSCDeployment(dep *appsv1.Deployment
 			continue
 		}
 		for _, pod := range podList.Items {
-			if len(pod.Status.ContainerStatuses) < nscContainersCount{
+			if len(pod.Status.ContainerStatuses) <= nscContainersCount{
+				// unexpected admission error
 				return errors.New(pod.Name + " has incorrect number of containers..." )
 			}
 
@@ -258,3 +259,4 @@ func intToint64ptr(i int) *int64 {
 
 	return &val
 }
+
