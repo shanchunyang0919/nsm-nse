@@ -174,8 +174,8 @@ func (kc *KubernetesClientEndpoint) DeletePodByLabel(label string) error {
 	// watch a pod until it is deleted
 	for _, pod := range podList.Items {
 		logrus.Printf("watching %v...\n", pod.Name)
-
 		deleted := make(chan bool)
+		noEvent := make(chan bool)
 		go func(podName string) {
 			for event := range watch.ResultChan() {
 				if event.Type == "DELETED" {
@@ -188,6 +188,7 @@ func (kc *KubernetesClientEndpoint) DeletePodByLabel(label string) error {
 					}
 				}
 			}
+			noEvent <- true
 		}(pod.Name)
 
 		err = kc.ClientSet.CoreV1().Pods(kc.Namespace).Delete(context.TODO(), pod.Name,
@@ -201,6 +202,9 @@ func (kc *KubernetesClientEndpoint) DeletePodByLabel(label string) error {
 				select {
 				case <-deleted:
 					logrus.Println(pod.Name, "is deleted")
+					break ForLoop
+				case <-noEvent:
+					logrus.Warning("no event detected, pod may have been deleted")
 					break ForLoop
 				}
 			}
