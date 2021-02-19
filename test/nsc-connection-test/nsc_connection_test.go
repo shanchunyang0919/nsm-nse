@@ -44,6 +44,9 @@ const (
 
 	// connectivity test
 	packetTransmit = 5
+
+	// Number retrying connectivity test if it fails
+	RETRY = 3
 )
 
 var (
@@ -212,50 +215,117 @@ func TestConnectivity(t *testing.T) {
 
 	logrus.Print("----- Connectivity Test -----")
 
+	for retryCount := 0; retryCount < RETRY; retryCount++ {
+		err = connectivityTest(defaultClientEndpoint)
+		if err != nil{
+			logrus.Warning("connectivity test failed, retry...")
+			continue
+		}else{
+			break
+		}
+	}
+	g.Expect(err).ShouldNot(HaveOccurred(),"all connectivity tests should have passed")
+}
+
+func connectivityTest(defaultClientEndpoint *cgo.KubernetesClientEndpoint) error{
 	// deploy long live pods for connectivity tests
 	depForConnectivityTest := struct {
 		podRestartRate int
 		replicaCount   int
 	}{5000, 2}
 
-	_, err = ReSetup(depForConnectivityTest.podRestartRate, depForConnectivityTest.replicaCount)
+	_, err := ReSetup(depForConnectivityTest.podRestartRate, depForConnectivityTest.replicaCount)
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
 	nscPodList, err := defaultClientEndpoint.GetPodListByLabel(nscLabel)
 	if err != nil {
-		t.Error(err)
+		return err
 	}
 
 	// iterate through every NSC containers to ping all NSE's memif IP address
 	var c *Container
+	var nscInfo []struct{
+		PodName string
+		Nsm0IP string
+	}
+	// ping from NSCs to NSE
 
-	for testNum, nscPod := range nscPodList.Items {
+	logrus.Println("pinging from nsc to nse...")
+
+	for _, nscPod := range nscPodList.Items {
 		c = &Container{
 			ContainerName: nscContainerName,
 			PodName:       nscPod.Name,
 			Namespace:     nscNamespace,
 		}
+		nsmIP, err := c.GetNSMIP()
+		if err != nil{
+			return err
+		}
+
+		// stores the nsc pod name and its nsm0 ip address
+		nscInfo = append(nscInfo,
+			struct {
+				PodName string
+				Nsm0IP  string
+			}{nscPod.Name,nsmIP})
+
 		vl3DestIP, err := c.GetNSEInterfaceIP()
 		if err != nil {
-			t.Error(err)
+			return err
 		}
 		logrus.Println("nse memif ip address " + vl3DestIP)
 
 		logs, success, err := c.Ping(vl3DestIP, packetTransmit)
 		if err != nil {
-			t.Error(err)
+			return err
 		}
 		if PING_LOG == "on" {
-			logrus.Printf("pod: %v, %v\n", testNum+1, c.PodName)
-			logrus.Printf("ping from container \"%s\" to address %s\n",
-				c.ContainerName, vl3DestIP)
+			logrus.Printf("ping from pod %v container \"%v\" to nse memif ip address %v\n",
+				c.PodName, c.ContainerName, vl3DestIP)
 			logrus.Println(logs)
 		}
-		g.Expect(success).Should(Equal(true),
-			"pod should have successful connections.")
+		if !success{
+			return errors.New("\"pod should have successful connections.")
+		}
 	}
+
+	logrus.Println("pinging from nsc to nsc...")
+	// ping from NSCs to NSCs
+	for _, nsc := range nscPodList.Items {
+		c = &Container{
+			ContainerName: nscContainerName,
+			PodName:       nsc.Name,
+			Namespace:     nscNamespace,
+		}
+		currIP, err := c.GetNSMIP()
+		if err != nil {
+			return err
+		}
+		for _, destNsc := range nscInfo {
+			if currIP == destNsc.Nsm0IP {
+				continue
+			}
+			logs, success, err := c.Ping(destNsc.Nsm0IP, packetTransmit)
+			if err != nil {
+				return err
+			}
+
+			if PING_LOG == "on" {
+				logrus.Printf("ping from pod %v to pod %v ip address %v\n",
+					c.PodName, destNsc.PodName, destNsc.Nsm0IP)
+				logrus.Println(logs)
+			}
+
+			if !success{
+				return errors.New("\"pod should have successful connections.")
+			}
+		}
+	}
+	// test passes
+	return nil
 }
 
 // The method contains the logic creating continuously restarting client pods

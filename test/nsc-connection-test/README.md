@@ -27,14 +27,18 @@ Iteration Time Period** is how long the pod is going to live until it gets delet
 | `INIT`| `on` | After running the script, could set to **off** to run go test CLI.|
 | `LOG`      | `on` | Enable logging mode.|
 | `TIMEMOUT` | `300`      |   Timeout flag for go test. The unit is **second** |
-| `NSE_LOG` | `30` | Prints out recent lines of Network Service Endpoint pod logs.|
-| `NSMGR_LOG` | `30` | Prints out recent lines of Network Service Manager Pod logs.|
 | `PING_LOG` | `on` | Enable to print out logs when NSC pods ping NSE pods.| 
+| `NSE_LOG` | `0` | Prints out recent lines of Network Service Endpoint pod logs.|
+| `NSMGR_LOG` | `0` | Prints out recent lines of Network Service Manager Pod logs.|
+
 
 ### Connectivity Test
 Perform a ping command from NSC busybox container to the IP address if NSE `memif` interface. For example, according 
 to the graph below, we will `exec` into the NSC pod container and execute `ping 192.168.22.2` command.
 <img width="1870" alt="Screen Shot 2021-02-18 at 7 13 47 AM" src="https://user-images.githubusercontent.com/71080192/108377543-01eb0500-71b9-11eb-9f84-61826c42d5f4.png">
+
+The next approach will be `exec` into one NSC pod and `ping` other NSC pod's `nsm0` IP Address.
+<img width="703" alt="Screen Shot 2021-02-18 at 12 40 44 PM" src="https://user-images.githubusercontent.com/71080192/108421054-789ff680-71e9-11eb-9b43-ddb5294f9d89.png">
 
 
 #### Demo

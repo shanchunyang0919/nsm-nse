@@ -109,21 +109,32 @@ func ExecIntoPod(cmd []string, containerName string, podName string, namespace s
 	return stdout.String(), stderr.String(), nil
 }
 
-// This method exec into NSC pod and get its nsm0 IP and add 1 to it. It returns the modified IP address as
-// the corresponding NSE memif IP address
-func (c *Container) GetNSEInterfaceIP() (string, error) {
+
+func (c *Container) GetNSMIP() (string, error){
 	getIPCmd := "ip a show dev nsm0"
 	cmd := []string{"sh", "-c", getIPCmd}
 
 	exec, stderr, err := ExecIntoPod(cmd, c.ContainerName, c.PodName, c.Namespace, nil)
 	if len(stderr) != 0 {
-		return "", errors.New("std getting nsm ip address")
+		return "", errors.New("stderr getting nsm ip address")
 	}
 	if err != nil {
 		return "", err
 	}
 
-	nsmIP := strings.Split(ipAddressRegex.FindString(exec), ".")
+	// Get nsm0 IP
+	return ipAddressRegex.FindString(exec), nil
+}
+
+
+// This method exec into NSC pod and get its nsm0 IP and add 1 to it. It returns the modified IP address as
+// the corresponding NSE memif IP address
+func (c *Container) GetNSEInterfaceIP() (string, error) {
+	nsm0IP, err := c.GetNSMIP()
+	if err != nil{
+		return "", err
+	}
+	nsmIP := strings.Split(nsm0IP, ".")
 
 	lastByte, err := strconv.Atoi(nsmIP[3])
 	if err != nil {
@@ -160,7 +171,7 @@ func (c *Container) Ping(destIP string, packetTransmit int) (string, bool, error
 
 	matches := PingRegex.FindString(stdout)
 	if matches == "" {
-		// cannot transmit packet
+		// cannot transmit packet, triggers Retry
 		return "", false, nil
 	}
 	// check for packet loss

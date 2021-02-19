@@ -11,8 +11,8 @@ setup:
 LOG=on
 TIMEOUT=300
 INIT=on
-NSE_LOG=30
-NSMGR_LOG=30
+NSE_LOG=0
+NSMGR_LOG=0
 PING_LOG=on
 # run test again after setup
 .PHONY: run-test

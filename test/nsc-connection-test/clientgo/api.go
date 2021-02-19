@@ -113,8 +113,8 @@ func (kc *KubernetesClientEndpoint) CleanUpNSCs(dep *appsv1.Deployment) error {
 // This method will return after all busybox containers are in READY status.
 // For testing purposes only, must need to set timeout option for it.
 func (kc *KubernetesClientEndpoint) ReCreateNSCDeployment(dep *appsv1.Deployment) error {
-	nscContainersCount := 1
-
+	//nscContainersCount := 1
+	logrus.Warning("HERE")
 	err := kc.CleanUpNSCs(dep)
 	if err != nil {
 		return err
@@ -126,6 +126,7 @@ func (kc *KubernetesClientEndpoint) ReCreateNSCDeployment(dep *appsv1.Deployment
 	}
 	// check if all the busybox containers are running
 	for {
+		logrus.Warning("HERE")
 		var hasNotReadyContainer bool
 		podList, err := kc.GetPodListByLabel(nscLabel)
 		if err != nil {
@@ -137,10 +138,11 @@ func (kc *KubernetesClientEndpoint) ReCreateNSCDeployment(dep *appsv1.Deployment
 			continue
 		}
 		for _, pod := range podList.Items {
-			if len(pod.Status.ContainerStatuses) <= nscContainersCount {
-				// unexpected admission error
-				return errors.New(pod.Name + " has incorrect number of containers...")
-			}
+			//if len(pod.Status.ContainerStatuses) <= nscContainersCount {
+			//	// unexpected admission error
+			//	hasNotReadyContainer = true
+			//	break
+			//}
 
 			for _, containerStatus := range pod.Status.ContainerStatuses {
 				if containerStatus.Name != nscContainerName {
@@ -203,15 +205,16 @@ func (kc *KubernetesClientEndpoint) DeletePodByLabel(label string) error {
 			return errors.Wrap(err, "error deleting pod by label")
 		}
 
-	ForLoop:
-		for {
-			select {
-			case <-deleted:
-				logrus.Println(pod.Name, "is deleted")
-				break ForLoop
+		ForLoop:
+			for {
+				select {
+				case <-deleted:
+					logrus.Println(pod.Name, "is deleted")
+					break ForLoop
+				}
 			}
-		}
 	}
+
 	return nil
 }
 
