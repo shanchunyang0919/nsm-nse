@@ -196,18 +196,18 @@ func (kc *KubernetesClientEndpoint) DeletePodByLabel(label string) error {
 			return errors.Wrap(err, "error deleting pod by label")
 		}
 
-		ForLoop:
-			for {
-				select {
-				case <-deleted:
-					logrus.Println(pod.Name, "is deleted")
-					break ForLoop
-				// timeout after watching for several seconds
-				case <-time.After(time.Second * time.Duration(watchTimeout)):
-					logrus.Warning("timeout waiting for deletion event")
-					break ForLoop
-				}
+	ForLoop:
+		for {
+			select {
+			case <-deleted:
+				logrus.Println(pod.Name, "is deleted")
+				break ForLoop
+			// timeout after watching for several seconds
+			case <-time.After(time.Second * time.Duration(watchTimeout)):
+				logrus.Warning("timeout waiting for deletion event")
+				break ForLoop
 			}
+		}
 	}
 
 	return nil

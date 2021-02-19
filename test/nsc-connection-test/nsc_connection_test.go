@@ -212,17 +212,17 @@ func TestConnectivity(t *testing.T) {
 
 	for retryCount := 0; retryCount < RETRY; retryCount++ {
 		err = connectivityTest(defaultClientEndpoint)
-		if err != nil{
+		if err != nil {
 			logrus.Warning("connectivity test failed, retry...")
 			continue
-		}else{
+		} else {
 			break
 		}
 	}
-	g.Expect(err).ShouldNot(HaveOccurred(),"all connectivity tests should have passed")
+	g.Expect(err).ShouldNot(HaveOccurred(), "all connectivity tests should have passed")
 }
 
-func connectivityTest(defaultClientEndpoint *cgo.KubernetesClientEndpoint) error{
+func connectivityTest(defaultClientEndpoint *cgo.KubernetesClientEndpoint) error {
 	// deploy long live pods for connectivity tests
 	depForConnectivityTest := struct {
 		podRestartRate int
@@ -241,9 +241,9 @@ func connectivityTest(defaultClientEndpoint *cgo.KubernetesClientEndpoint) error
 
 	// iterate through every NSC containers to ping all NSE's memif IP address
 	var c *Container
-	var nscInfo []struct{
+	var nscInfo []struct {
 		PodName string
-		Nsm0IP string
+		Nsm0IP  string
 	}
 	// ping from NSCs to NSE
 
@@ -256,7 +256,7 @@ func connectivityTest(defaultClientEndpoint *cgo.KubernetesClientEndpoint) error
 			Namespace:     nscNamespace,
 		}
 		nsmIP, err := c.GetNSMIP()
-		if err != nil{
+		if err != nil {
 			return err
 		}
 
@@ -265,7 +265,7 @@ func connectivityTest(defaultClientEndpoint *cgo.KubernetesClientEndpoint) error
 			struct {
 				PodName string
 				Nsm0IP  string
-			}{nscPod.Name,nsmIP})
+			}{nscPod.Name, nsmIP})
 
 		vl3DestIP, err := c.GetNSEInterfaceIP()
 		if err != nil {
@@ -282,7 +282,7 @@ func connectivityTest(defaultClientEndpoint *cgo.KubernetesClientEndpoint) error
 				c.PodName, c.ContainerName, vl3DestIP)
 			logrus.Println(logs)
 		}
-		if !success{
+		if !success {
 			return errors.New("\"pod should have successful connections.")
 		}
 	}
@@ -314,7 +314,7 @@ func connectivityTest(defaultClientEndpoint *cgo.KubernetesClientEndpoint) error
 				logrus.Println(logs)
 			}
 
-			if !success{
+			if !success {
 				return errors.New("\"pod should have successful connections.")
 			}
 		}
@@ -344,6 +344,7 @@ func bounce(dep *appsv1.Deployment, endpoint *cgo.KubernetesClientEndpoint, podR
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -357,6 +358,7 @@ func restartCountMode(dep *appsv1.Deployment, endpoint *cgo.KubernetesClientEndp
 		}
 		time.Sleep(time.Second * time.Duration(podRestartRate))
 	}
+
 	return nil
 }
 
@@ -373,4 +375,5 @@ func displayPodLogs(kC *cgo.KubernetesClientEndpoint, pod corev1.Pod, tails int,
 
 	return nil
 }
+
 

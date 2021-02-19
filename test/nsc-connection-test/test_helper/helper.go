@@ -30,7 +30,7 @@ type Container struct {
 
 var (
 	// This regex match ping statistics - X packets transmitted, X packets received, X% packet loss
-	PingRegex = regexp.MustCompile("\n([0-9]+) packets transmitted, ([0-9]+) packets received, ([0-9]+)% packet loss")
+	PingRegex      = regexp.MustCompile("\n([0-9]+) packets transmitted, ([0-9]+) packets received, ([0-9]+)% packet loss")
 	ipAddressRegex = regexp.MustCompile(`\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b`)
 
 	packetLossTolerance = 50
@@ -109,8 +109,7 @@ func ExecIntoPod(cmd []string, containerName string, podName string, namespace s
 	return stdout.String(), stderr.String(), nil
 }
 
-
-func (c *Container) GetNSMIP() (string, error){
+func (c *Container) GetNSMIP() (string, error) {
 	getIPCmd := "ip a show dev nsm0"
 	cmd := []string{"sh", "-c", getIPCmd}
 
@@ -126,12 +125,11 @@ func (c *Container) GetNSMIP() (string, error){
 	return ipAddressRegex.FindString(exec), nil
 }
 
-
 // This method exec into NSC pod and get its nsm0 IP and add 1 to it. It returns the modified IP address as
 // the corresponding NSE memif IP address
 func (c *Container) GetNSEInterfaceIP() (string, error) {
 	nsm0IP, err := c.GetNSMIP()
-	if err != nil{
+	if err != nil {
 		return "", err
 	}
 	nsmIP := strings.Split(nsm0IP, ".")
