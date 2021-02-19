@@ -97,7 +97,6 @@ func setEnvironmentVariables() error {
 }
 
 func TestMain(m *testing.M) {
-
 	err := setEnvironmentVariables()
 	if err != nil {
 		logrus.Fatal(err)
@@ -210,6 +209,7 @@ func TestConnectivity(t *testing.T) {
 
 	logrus.Print("----- Connectivity Test -----")
 
+	// if the connectivity test fails it will retry the whole test several times.
 	for retryCount := 0; retryCount < RETRY; retryCount++ {
 		err = connectivityTest(defaultClientEndpoint)
 		if err != nil {
@@ -219,9 +219,13 @@ func TestConnectivity(t *testing.T) {
 			break
 		}
 	}
+
 	g.Expect(err).ShouldNot(HaveOccurred(), "all connectivity tests should have passed")
 }
 
+
+// If this test fails it will returns an error but it will be re-run until it hits the limit amount of times
+// we can retry.
 func connectivityTest(defaultClientEndpoint *cgo.KubernetesClientEndpoint) error {
 	// deploy long live pods for connectivity tests
 	depForConnectivityTest := struct {
@@ -288,6 +292,7 @@ func connectivityTest(defaultClientEndpoint *cgo.KubernetesClientEndpoint) error
 	}
 
 	logrus.Println("pinging from nsc to nsc...")
+
 	// ping from NSCs to NSCs
 	for _, nsc := range nscPodList.Items {
 		c = &Container{
