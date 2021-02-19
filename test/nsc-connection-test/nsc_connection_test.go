@@ -213,8 +213,7 @@ func TestConnectivity(t *testing.T) {
 	for retryCount := 0; retryCount < RETRY; retryCount++ {
 		err = connectivityTest(defaultClientEndpoint)
 		if err != nil {
-			logrus.Warning("connectivity test failed, retry...")
-			continue
+			logrus.Warning("connectivity test failed...")
 		} else {
 			break
 		}
@@ -287,7 +286,7 @@ func connectivityTest(defaultClientEndpoint *cgo.KubernetesClientEndpoint) error
 			logrus.Println(logs)
 		}
 		if !success {
-			return errors.New("\"pod should have successful connections.")
+			return errors.New("pod should have successful connections.")
 		}
 	}
 
@@ -320,7 +319,7 @@ func connectivityTest(defaultClientEndpoint *cgo.KubernetesClientEndpoint) error
 			}
 
 			if !success {
-				return errors.New("\"pod should have successful connections.")
+				return errors.New("pod should have successful connections.")
 			}
 		}
 	}
