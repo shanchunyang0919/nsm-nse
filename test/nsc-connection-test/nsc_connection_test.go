@@ -51,7 +51,6 @@ const (
 
 var (
 	// environment variables
-	INIT_MODE string
 	TIMEOUT   int
 	NSE_LOG   int
 	NSMGR_LOG int
@@ -60,7 +59,6 @@ var (
 )
 
 func setEnvironmentVariables() error {
-	INIT_MODE = os.Getenv("INIT")
 	var err error
 
 	TIMEOUT, err = strconv.Atoi(os.Getenv("TIMEOUT"))
@@ -68,7 +66,6 @@ func setEnvironmentVariables() error {
 		return errors.Wrap(err, "error setting TIMEOUT")
 	}
 
-	logrus.Println("INIT MODE:", INIT_MODE)
 	logrus.Println("TIMEOUT:", TIMEOUT)
 	// turn off log mode
 	LOG = os.Getenv("LOG")
@@ -109,11 +106,9 @@ func TestMain(m *testing.M) {
 	timeout := time.After(time.Second * time.Duration(TIMEOUT))
 	done := make(chan bool)
 
-	if (INIT_MODE) == "on" {
-		err := Init(initPodRestartRate, initReplicaCount)
-		if err != nil {
-			logrus.Fatalf("error initializing: %v", err)
-		}
+	err = Init(initPodRestartRate, initReplicaCount)
+	if err != nil {
+		logrus.Warning(err)
 	}
 	// it waits either the done channel to finish or timeout
 	go func() {
@@ -324,7 +319,7 @@ func connectivityTest(defaultClientEndpoint *cgo.KubernetesClientEndpoint) error
 			}
 		}
 	}
-	// test passes
+
 	return nil
 }
 

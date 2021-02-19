@@ -10,14 +10,13 @@ setup:
 # Enviroment varibles for go test
 LOG=on
 TIMEOUT=300
-INIT=on
 NSE_LOG=0
 NSMGR_LOG=0
 PING_LOG=on
 # run test again after setup
 .PHONY: run-test
 run-test:
-	INIT=${INIT} LOG=${LOG} TIMEOUT=${TIMEOUT} NSE_LOG=${NSE_LOG} NSMGR_LOG=${NSMGR_LOG} PING_LOG=${PING_LOG} go test
+	LOG=${LOG} TIMEOUT=${TIMEOUT} NSE_LOG=${NSE_LOG} NSMGR_LOG=${NSMGR_LOG} PING_LOG=${PING_LOG} go test
 
 .PHONY: clean
 clean:

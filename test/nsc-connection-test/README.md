@@ -24,7 +24,6 @@ Iteration Time Period** is how long the pod is going to live until it gets delet
 | ENV VAR | Default       | Description |
 | ---------- |:-------------:| -----:|
 | `NSE` | `1`| Specify the numbers of NSEs to be deployed.|
-| `INIT`| `on` | After running the script, could set to **off** to run go test CLI.|
 | `LOG`      | `on` | Enable logging mode.|
 | `TIMEMOUT` | `300`      |   Timeout flag for go test. The unit is **second** |
 | `PING_LOG` | `on` | Enable to print out logs when NSC pods ping NSE pods.| 
@@ -72,7 +71,7 @@ $ make clean
 
 **Run test with specific environment variables (Manual)**
 ```bash 
-$ INIT=off LOG=on TIMEOUT=300 NSE_LOG=20 NSMGR_LOG=5 PING_LOG=off go test
+$ LOG=on TIMEOUT=300 NSE_LOG=20 NSMGR_LOG=5 PING_LOG=off go test
 ```
 
 **Clean up (Manual)**
